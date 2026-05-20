@@ -4,16 +4,19 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "sync": "node scripts/sync-gallery.mjs && npm run merge",
     "generate": "node scripts/generate-placeholders.mjs",
-    "dev": "npm run merge && vite",
+    "dev": "npm run sync && vite",
     "merge": "node scripts/merge-projects.mjs",
-    "prebuild": "npm run generate && npm run merge",
+    "prebuild": "npm run sync",
     "build": "tsc && vite build",
     "build:pages": "GITHUB_PAGES=true npm run build && touch docs/.nojekyll",
-    "publish": "npm run build:pages && git add -A && git status",
+    "publish": "bash scripts/publish-gallery.sh",
+    "watch": "node scripts/watch-gallery.mjs",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "chokidar": "^4.0.3",
     "typescript": "~6.0.2",
     "vite": "^8.0.12"
   }

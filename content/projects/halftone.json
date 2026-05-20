@@ -1,0 +1,14 @@
+{
+  "slug": "halftone",
+  "title": "Halftone",
+  "year": 2026,
+  "sort": 100,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/halftone/01.svg",
+      "alt": "Halftone — 01",
+      "caption": "Halftone. 01."
+    }
+  ]
+}

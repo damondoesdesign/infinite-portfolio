@@ -1,0 +1,14 @@
+{
+  "slug": "hand-tool",
+  "title": "Hand Tool",
+  "year": 2026,
+  "sort": 110,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/hand-tool/01.svg",
+      "alt": "Hand Tool — 01",
+      "caption": "Hand Tool. 01."
+    }
+  ]
+}

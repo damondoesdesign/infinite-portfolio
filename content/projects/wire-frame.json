@@ -1,0 +1,29 @@
+{
+  "slug": "wire-frame",
+  "title": "Wire Frame",
+  "year": 2026,
+  "sort": 260,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/wire-frame/01.svg",
+      "alt": "Wire Frame — 01",
+      "caption": "Wire Frame. 01."
+    },
+    {
+      "file": "/images/projects/wire-frame/02.svg",
+      "alt": "Wire Frame — 02",
+      "caption": "Wire Frame. 02."
+    },
+    {
+      "file": "/images/projects/wire-frame/03.svg",
+      "alt": "Wire Frame — 03",
+      "caption": "Wire Frame. 03."
+    },
+    {
+      "file": "/images/projects/wire-frame/04.svg",
+      "alt": "Wire Frame — 04",
+      "caption": "Wire Frame. 04."
+    }
+  ]
+}

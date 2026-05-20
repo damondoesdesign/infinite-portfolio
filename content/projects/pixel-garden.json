@@ -1,0 +1,14 @@
+{
+  "slug": "pixel-garden",
+  "title": "Pixel Garden",
+  "year": 2026,
+  "sort": 190,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/pixel-garden/01.svg",
+      "alt": "Pixel Garden — 01",
+      "caption": "Pixel Garden. 01."
+    }
+  ]
+}

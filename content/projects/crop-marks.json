@@ -1,0 +1,14 @@
+{
+  "slug": "crop-marks",
+  "title": "Crop Marks",
+  "year": 2026,
+  "sort": 30,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/crop-marks/01.svg",
+      "alt": "Crop Marks — 01",
+      "caption": "Crop Marks. 01."
+    }
+  ]
+}

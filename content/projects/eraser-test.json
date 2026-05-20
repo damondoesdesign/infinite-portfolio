@@ -1,0 +1,14 @@
+{
+  "slug": "eraser-test",
+  "title": "Eraser Test",
+  "year": 2026,
+  "sort": 60,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/eraser-test/01.svg",
+      "alt": "Eraser Test — 01",
+      "caption": "Eraser Test. 01."
+    }
+  ]
+}

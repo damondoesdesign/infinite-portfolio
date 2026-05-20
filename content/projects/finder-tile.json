@@ -1,0 +1,14 @@
+{
+  "slug": "finder-tile",
+  "title": "Finder Tile",
+  "year": 2026,
+  "sort": 70,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/finder-tile/01.svg",
+      "alt": "Finder Tile — 01",
+      "caption": "Finder Tile. 01."
+    }
+  ]
+}

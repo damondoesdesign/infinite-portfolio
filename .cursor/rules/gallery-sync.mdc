@@ -1,0 +1,14 @@
+---
+description: When the user adds or changes images in the gallery drop folder, sync and publish automatically.
+globs:
+  - public/images/drop/**
+  - content/**
+---
+
+When the user mentions new images, uploading work, or updating the gallery:
+
+1. Run `npm run publish` from `~/Documents/infinite-portfolio` (sync → build → git push).
+2. If that fails on git push, report the error and tell them to run `./scripts/first-push.sh` once.
+3. Do not ask them to edit JSON or run git manually.
+
+The drop folder is the only source of truth: `public/images/drop/{project-slug}/`

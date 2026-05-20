@@ -1,0 +1,14 @@
+{
+  "slug": "trash-can",
+  "title": "Trash Can",
+  "year": 2026,
+  "sort": 250,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/trash-can/01.svg",
+      "alt": "Trash Can — 01",
+      "caption": "Trash Can. 01."
+    }
+  ]
+}

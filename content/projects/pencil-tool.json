@@ -1,0 +1,14 @@
+{
+  "slug": "pencil-tool",
+  "title": "Pencil Tool",
+  "year": 2026,
+  "sort": 180,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/pencil-tool/01.svg",
+      "alt": "Pencil Tool — 01",
+      "caption": "Pencil Tool. 01."
+    }
+  ]
+}

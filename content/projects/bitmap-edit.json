@@ -1,0 +1,24 @@
+{
+  "slug": "bitmap-edit",
+  "title": "Bitmap Edit",
+  "year": 2026,
+  "sort": 0,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/bitmap-edit/01.svg",
+      "alt": "Bitmap Edit — 01",
+      "caption": "Bitmap Edit. 01."
+    },
+    {
+      "file": "/images/projects/bitmap-edit/02.svg",
+      "alt": "Bitmap Edit — 02",
+      "caption": "Bitmap Edit. 02."
+    },
+    {
+      "file": "/images/projects/bitmap-edit/03.svg",
+      "alt": "Bitmap Edit — 03",
+      "caption": "Bitmap Edit. 03."
+    }
+  ]
+}

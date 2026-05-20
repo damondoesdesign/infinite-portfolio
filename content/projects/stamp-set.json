@@ -1,0 +1,14 @@
+{
+  "slug": "stamp-set",
+  "title": "Stamp Set",
+  "year": 2026,
+  "sort": 230,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/stamp-set/01.svg",
+      "alt": "Stamp Set — 01",
+      "caption": "Stamp Set. 01."
+    }
+  ]
+}

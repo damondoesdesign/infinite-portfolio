@@ -76,32 +76,15 @@ Then you can create repos and open PRs from the terminal.
 
 ---
 
-## Adding real projects
+## Adding work (drop folder — no code)
 
-**Until CMS is fully wired:** edit [`content/projects.json`](content/projects.json) or add `content/projects/my-piece.json` files, then run `npm run merge`.
+1. Drop a folder of images into **`public/images/drop/your-project-name/`**
+2. Tell Cursor **“sync the gallery”** or run `npm run publish`
+3. Site updates automatically
 
-Each project:
+Optional inside each project folder: `_title.txt`, `_year.txt`, `_sort.txt`
 
-```json
-{
-  "slug": "my-piece",
-  "title": "My Piece",
-  "year": 2026,
-  "sort": 50,
-  "coverIndex": 0,
-  "images": [
-    {
-      "file": "/images/projects/my-piece/01.webp",
-      "alt": "Description for screen readers",
-      "caption": "Caption under the fullscreen image."
-    }
-  ]
-}
-```
-
-Put image files in `public/images/projects/…`. Re-run `npm run dev` or push to `main` to deploy.
-
-**Regenerate placeholder SVGs only:** `npm run generate` (skips if content already exists).
+**Auto-publish while you work:** `npm run watch` (watches the drop folder)
 
 ---
 

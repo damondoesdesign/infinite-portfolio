@@ -1,0 +1,19 @@
+{
+  "slug": "menu-bar",
+  "title": "Menu Bar",
+  "year": 2026,
+  "sort": 160,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/menu-bar/01.svg",
+      "alt": "Menu Bar — 01",
+      "caption": "Menu Bar. 01."
+    },
+    {
+      "file": "/images/projects/menu-bar/02.svg",
+      "alt": "Menu Bar — 02",
+      "caption": "Menu Bar. 02."
+    }
+  ]
+}

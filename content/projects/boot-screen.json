@@ -1,0 +1,34 @@
+{
+  "slug": "boot-screen",
+  "title": "Boot Screen",
+  "year": 2026,
+  "sort": 10,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/boot-screen/01.svg",
+      "alt": "Boot Screen — 01",
+      "caption": "Boot Screen. 01."
+    },
+    {
+      "file": "/images/projects/boot-screen/02.svg",
+      "alt": "Boot Screen — 02",
+      "caption": "Boot Screen. 02."
+    },
+    {
+      "file": "/images/projects/boot-screen/03.svg",
+      "alt": "Boot Screen — 03",
+      "caption": "Boot Screen. 03."
+    },
+    {
+      "file": "/images/projects/boot-screen/04.svg",
+      "alt": "Boot Screen — 04",
+      "caption": "Boot Screen. 04."
+    },
+    {
+      "file": "/images/projects/boot-screen/05.svg",
+      "alt": "Boot Screen — 05",
+      "caption": "Boot Screen. 05."
+    }
+  ]
+}

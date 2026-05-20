@@ -1,0 +1,14 @@
+{
+  "slug": "mono-lake",
+  "title": "Mono Lake",
+  "year": 2026,
+  "sort": 170,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/mono-lake/01.svg",
+      "alt": "Mono Lake — 01",
+      "caption": "Mono Lake. 01."
+    }
+  ]
+}

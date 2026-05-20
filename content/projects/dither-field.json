@@ -1,0 +1,14 @@
+{
+  "slug": "dither-field",
+  "title": "Dither Field",
+  "year": 2026,
+  "sort": 40,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/dither-field/01.svg",
+      "alt": "Dither Field — 01",
+      "caption": "Dither Field. 01."
+    }
+  ]
+}
