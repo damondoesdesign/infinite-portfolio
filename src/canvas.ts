@@ -1,7 +1,7 @@
 import {
   getCoverImage,
+  getGridDimensions,
   getProjects,
-  getWorldSize,
   projectIndexForCell,
   TILE_PITCH,
   TILE_SIZE,
@@ -24,8 +24,9 @@ interface PooledTile {
   el: HTMLButtonElement
   img: HTMLImageElement
   fileKey: string
-  col: number
-  row: number
+  projectSlug: string
+  lastX: number
+  lastY: number
 }
 
 export class InfiniteCanvas {
@@ -33,7 +34,6 @@ export class InfiniteCanvas {
   private readonly viewport: HTMLElement
   private readonly world: HTMLElement
   private readonly projects: Project[]
-  private readonly worldSize: ReturnType<typeof getWorldSize>
 
   private readonly active = new Map<string, PooledTile>()
   private readonly pool: HTMLButtonElement[] = []
@@ -71,7 +71,6 @@ export class InfiniteCanvas {
     this.root = root
     this.onOpenProject = options.onOpenProject
     this.projects = getProjects()
-    this.worldSize = getWorldSize(this.projects.length)
 
     this.viewport = document.createElement('div')
     this.viewport.className = 'canvas-viewport'
@@ -111,23 +110,11 @@ export class InfiniteCanvas {
 
   getThumbBySlug(slug: string): HTMLElement | null {
     for (const pooled of this.active.values()) {
-      if (
-        pooled.el.dataset.slug === slug &&
-        pooled.el.style.visibility !== 'hidden'
-      ) {
+      if (pooled.projectSlug === slug && pooled.el.style.visibility !== 'hidden') {
         return pooled.el
       }
     }
     return null
-  }
-
-  private viewBuffer() {
-    const viewW = window.innerWidth
-    const viewH = window.innerHeight
-    return {
-      col: Math.ceil(viewW / TILE_PITCH) + 4,
-      row: Math.ceil(viewH / TILE_PITCH) + 4,
-    }
   }
 
   private resetCamera() {
@@ -139,17 +126,17 @@ export class InfiniteCanvas {
   }
 
   private normalizeCamera() {
-    const { width, height } = this.worldSize
-    const limitX = width * 6
-    const limitY = height * 6
+    const { width, height } = getGridDimensions()
+    const limitX = width * 4
+    const limitY = height * 4
     if (Math.abs(this.targetX) > limitX) {
-      const shift = Math.sign(this.targetX) * width * 4
+      const shift = Math.sign(this.targetX) * width * 2
       this.targetX -= shift
       this.camX -= shift
       if (this.frozen) this.frozenX -= shift
     }
     if (Math.abs(this.targetY) > limitY) {
-      const shift = Math.sign(this.targetY) * height * 4
+      const shift = Math.sign(this.targetY) * height * 2
       this.targetY -= shift
       this.camY -= shift
       if (this.frozen) this.frozenY -= shift
@@ -160,12 +147,10 @@ export class InfiniteCanvas {
     return `${col},${row}`
   }
 
-  private projectAt(col: number, row: number): Project | null {
+  private projectAt(col: number, row: number, cols: number, rows: number): Project | null {
     if (this.projects.length === 0) return null
-    const wrappedCol =
-      ((col % this.worldSize.cols) + this.worldSize.cols) % this.worldSize.cols
-    const wrappedRow =
-      ((row % this.worldSize.rows) + this.worldSize.rows) % this.worldSize.rows
+    const wrappedCol = ((col % cols) + cols) % cols
+    const wrappedRow = ((row % rows) + rows) % rows
     const idx = projectIndexForCell(wrappedCol, wrappedRow, this.projects.length)
     return this.projects[idx] ?? null
   }
@@ -182,7 +167,14 @@ export class InfiniteCanvas {
       this.world.appendChild(el)
     }
     const img = el.querySelector('img')!
-    return { el, img, fileKey: '', col: 0, row: 0 }
+    return {
+      el,
+      img,
+      fileKey: '',
+      projectSlug: '',
+      lastX: NaN,
+      lastY: NaN,
+    }
   }
 
   private releaseTile(key: string) {
@@ -190,98 +182,86 @@ export class InfiniteCanvas {
     if (!pooled) return
     pooled.el.style.visibility = 'hidden'
     pooled.el.style.pointerEvents = 'none'
+    pooled.projectSlug = ''
     this.pool.push(pooled.el)
     this.active.delete(key)
   }
 
   private bindTile(
     pooled: PooledTile,
-    col: number,
-    row: number,
     project: Project,
     x: number,
     y: number
   ) {
     const cover = getCoverImage(project)
-    pooled.col = col
-    pooled.row = row
-    pooled.el.dataset.slug = project.slug
-    pooled.el.setAttribute('aria-label', `Open ${project.title}`)
+    const slug = project.slug
 
-    if (pooled.fileKey !== cover.file) {
-      setImageSrc(pooled.img, cover.file)
-      pooled.fileKey = cover.file
-    }
-    pooled.img.alt = cover.alt
-
-    let badge = pooled.el.querySelector<HTMLElement>('.canvas-tile-badge')
-    if (project.images.length > 1) {
-      if (!badge) {
-        badge = document.createElement('span')
-        badge.className = 'canvas-tile-badge'
-        pooled.el.appendChild(badge)
+    if (pooled.projectSlug !== slug || pooled.fileKey !== cover.file) {
+      const nextImg = setImageSrc(pooled.img, cover.file)
+      if (nextImg !== pooled.img) {
+        pooled.el.replaceChild(nextImg, pooled.img)
+        pooled.img = nextImg
       }
-      badge.textContent = String(project.images.length)
-      badge.hidden = false
-    } else if (badge) {
-      badge.hidden = true
+      pooled.fileKey = cover.file
+      pooled.projectSlug = slug
+      pooled.el.dataset.slug = slug
+      pooled.img.alt = cover.alt
+      pooled.el.setAttribute('aria-label', `Open ${project.title}`)
+
+      let badge = pooled.el.querySelector<HTMLElement>('.canvas-tile-badge')
+      if (project.images.length > 1) {
+        if (!badge) {
+          badge = document.createElement('span')
+          badge.className = 'canvas-tile-badge'
+          pooled.el.appendChild(badge)
+        }
+        badge.textContent = String(project.images.length)
+        badge.hidden = false
+      } else if (badge) {
+        badge.hidden = true
+      }
     }
 
     pooled.el.style.visibility = 'visible'
     pooled.el.style.pointerEvents = this.enabled ? 'auto' : 'none'
-    pooled.el.style.transform = `translate3d(${x}px, ${y}px, 0)`
+
+    if (pooled.lastX !== x || pooled.lastY !== y) {
+      pooled.el.style.transform = `translate3d(${x}px, ${y}px, 0)`
+      pooled.lastX = x
+      pooled.lastY = y
+    }
   }
 
   private syncTiles = () => {
     if (this.projects.length === 0) return
 
-    const { width, height } = this.worldSize
+    const grid = getGridDimensions()
     const viewW = window.innerWidth
     const viewH = window.innerHeight
-    const buf = this.viewBuffer()
-
     const camX = this.frozen ? this.frozenX : this.camX
     const camY = this.frozen ? this.frozenY : this.camY
 
-    const startCol = Math.floor(-camX / TILE_PITCH) - buf.col
-    const endCol = Math.ceil((viewW - camX) / TILE_PITCH) + buf.col
-    const startRow = Math.floor(-camY / TILE_PITCH) - buf.row
-    const endRow = Math.ceil((viewH - camY) / TILE_PITCH) + buf.row
+    const buf = Math.max(4, Math.ceil(Math.max(viewW, viewH) / TILE_PITCH / 3))
+    const startCol = Math.floor(-camX / TILE_PITCH) - buf
+    const endCol = Math.ceil((viewW - camX) / TILE_PITCH) + buf
+    const startRow = Math.floor(-camY / TILE_PITCH) - buf
+    const endRow = Math.ceil((viewH - camY) / TILE_PITCH) + buf
 
     const needed = new Set<string>()
 
     for (let row = startRow; row <= endRow; row++) {
       for (let col = startCol; col <= endCol; col++) {
-        const project = this.projectAt(col, row)
+        const project = this.projectAt(col, row, grid.cols, grid.rows)
         if (!project) continue
 
-        const baseX = col * TILE_PITCH
-        const baseY = row * TILE_PITCH
-
-        let bestX = baseX + camX
-        let bestY = baseY + camY
-        let bestDist = Infinity
-
-        for (let ox = -1; ox <= 1; ox++) {
-          for (let oy = -1; oy <= 1; oy++) {
-            const x = baseX + camX + ox * width
-            const y = baseY + camY + oy * height
-            const cx = x + TILE_SIZE / 2 - viewW / 2
-            const cy = y + TILE_SIZE / 2 - viewH / 2
-            const dist = cx * cx + cy * cy
-            if (dist < bestDist) {
-              bestDist = dist
-              bestX = x
-              bestY = y
-            }
-          }
-        }
+        const x = col * TILE_PITCH + camX
+        const y = row * TILE_PITCH + camY
 
         if (
-          bestX > viewW + TILE_SIZE ||
-          bestX < -TILE_SIZE ||
-          bestY > viewH + TILE_SIZE ||
-          bestY < -TILE_SIZE
+          x > viewW + TILE_SIZE ||
+          x < -TILE_SIZE ||
+          y > viewH + TILE_SIZE ||
+          y < -TILE_SIZE
         ) {
           continue
         }
@@ -294,7 +274,7 @@ export class InfiniteCanvas {
           pooled = this.acquireTile()
           this.active.set(key, pooled)
         }
-        this.bindTile(pooled, col, row, project, bestX, bestY)
+        this.bindTile(pooled, project, x, y)
       }
     }
 
@@ -345,9 +325,9 @@ export class InfiniteCanvas {
     if (!this.enabled || this.frozen) return
 
     if (e.pointerId === this.tilePointerId) {
-      const dx = e.clientX - this.dragStartX
-      const dy = e.clientY - this.dragStartY
-      if (Math.hypot(dx, dy) > DRAG_THRESHOLD) this.dragMoved = true
+      if (Math.hypot(e.clientX - this.dragStartX, e.clientY - this.dragStartY) > DRAG_THRESHOLD) {
+        this.dragMoved = true
+      }
       return
     }
 
@@ -365,13 +345,12 @@ export class InfiniteCanvas {
 
   private onPointerUp = (e: PointerEvent) => {
     if (e.pointerId === this.tilePointerId) {
-      const quickTap =
+      if (
         !this.dragMoved &&
         performance.now() - this.pressTime < TAP_MAX_MS &&
         this.pressedTile &&
         this.pressedProject
-
-      if (quickTap && this.pressedTile && this.pressedProject) {
+      ) {
         this.onOpenProject(
           this.pressedProject,
           this.pressedTile,

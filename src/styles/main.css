@@ -4,7 +4,6 @@
   --tile-size: 240px;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
 
-  /* Tweak detail backdrop — tell me new values anytime */
   --detail-backdrop-opacity: 0.25;
   --detail-backdrop-blur: 6px;
 
@@ -28,6 +27,7 @@ html,
 body {
   margin: 0;
   height: 100%;
+  width: 100%;
   background: var(--bg);
   color: var(--fg);
   overflow: hidden;
@@ -35,7 +35,8 @@ body {
 }
 
 #app {
-  position: relative;
+  position: fixed;
+  inset: 0;
   width: 100%;
   height: 100%;
 }
@@ -48,6 +49,8 @@ body {
 .canvas-viewport {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
   cursor: grab;
   touch-action: none;
   background: var(--bg);
@@ -87,9 +90,10 @@ body {
   border: none;
   background: transparent;
   cursor: pointer;
-  overflow: visible;
+  overflow: hidden;
   will-change: transform;
   pointer-events: auto;
+  contain: layout style paint;
 }
 
 .canvas-tile:focus-visible {
@@ -130,6 +134,7 @@ body {
   z-index: 20;
   display: grid;
   place-items: center;
+  grid-template-rows: 1fr auto;
   background: transparent;
   pointer-events: auto;
   cursor: zoom-out;
@@ -139,40 +144,43 @@ body {
   display: none !important;
 }
 
-.detail-frame {
+.detail-stage {
   position: relative;
   width: min(90vw, 1100px);
-  height: min(90vh, 820px);
+  height: min(72vh, 720px);
   display: grid;
-  grid-template-rows: 1fr auto;
-  gap: 14px;
-  z-index: 1;
+  place-items: center;
   pointer-events: none;
+  transform-origin: center center;
 }
 
 .detail-image {
-  width: 100%;
-  height: 100%;
-  max-height: calc(min(90vh, 820px) - 80px);
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
   object-fit: contain;
   border: none;
   background: transparent;
   pointer-events: none;
+  transform-origin: center center;
+  will-change: transform, opacity;
 }
 
 .piece-caption {
   margin: 0;
-  padding: 10px 4px 0;
+  padding: 14px 24px 24px;
   font-size: 15px;
   line-height: 1.5;
   letter-spacing: 0.02em;
-  max-width: 70ch;
-  font-weight: 400;
+  max-width: min(90vw, 70ch);
+  text-align: center;
   pointer-events: none;
+  transition: opacity 0.3s ease;
 }
 
 .detail-nav {
-  position: absolute;
+  position: fixed;
   top: 50%;
   transform: translateY(-50%);
   width: 56px;
@@ -185,6 +193,7 @@ body {
   place-items: center;
   padding: 0;
   pointer-events: auto;
+  z-index: 21;
 }
 
 .detail-nav[hidden] {
@@ -197,11 +206,11 @@ body {
 }
 
 .detail-nav-prev {
-  left: -72px;
+  left: max(8px, calc(50% - min(45vw, 550px) - 64px));
 }
 
 .detail-nav-next {
-  right: -72px;
+  right: max(8px, calc(50% - min(45vw, 550px) - 64px));
 }
 
 .detail-close {
@@ -240,6 +249,12 @@ body {
   .detail-nav {
     width: 44px;
     height: 56px;
+  }
+}
+
+@media (min-width: 3000px) {
+  :root {
+    --tile-size: 260px;
   }
 }
 

@@ -2,27 +2,44 @@ import { assetUrl } from './assetUrl'
 
 const assigned = new WeakMap<HTMLImageElement, string>()
 
-/** Assign image URL; GIFs only reload when the file path actually changes. */
-export function setImageSrc(img: HTMLImageElement, filePath: string) {
-  const prev = assigned.get(img)
-  if (prev === filePath) return
-
-  assigned.set(img, filePath)
-  const url = assetUrl(filePath)
-  const isGif = /\.gif$/i.test(filePath)
-
-  if (isGif) {
-    img.loading = 'eager'
-    img.src = ''
-    void img.offsetWidth
-    img.src = url
-    return
-  }
-
-  img.loading = 'lazy'
-  img.src = url
+function gifUrl(path: string) {
+  const base = assetUrl(path)
+  return `${base}${base.includes('?') ? '&' : '?'}_=${Date.now()}`
 }
 
-export function clearImageAssignment(img: HTMLImageElement) {
-  assigned.delete(img)
+/** Load image; GIFs use a fresh element so animation plays in pooled tiles. */
+export function setImageSrc(
+  img: HTMLImageElement,
+  filePath: string
+): HTMLImageElement {
+  const isGif = /\.gif$/i.test(filePath)
+  const url = isGif ? gifUrl(filePath) : assetUrl(filePath)
+  const prev = assigned.get(img)
+
+  if (prev === filePath) return img
+
+  if (isGif) {
+    const parent = img.parentElement
+    if (parent) {
+      const next = document.createElement('img')
+      next.className = img.className
+      next.alt = img.alt
+      next.draggable = false
+      next.loading = 'eager'
+      next.decoding = 'sync'
+      next.src = url
+      parent.replaceChild(next, img)
+      assigned.set(next, filePath)
+      return next
+    }
+    img.loading = 'eager'
+    img.src = url
+    assigned.set(img, filePath)
+    return img
+  }
+
+  assigned.set(img, filePath)
+  img.loading = 'lazy'
+  img.src = url
+  return img
 }
