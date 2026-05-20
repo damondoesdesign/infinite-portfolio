@@ -18,7 +18,6 @@ export class DetailView {
   private readonly overlay: HTMLElement
   private readonly stage: HTMLElement
   private readonly img: HTMLImageElement
-  private readonly caption: HTMLElement
   private readonly prevBtn: HTMLButtonElement
   private readonly nextBtn: HTMLButtonElement
   private readonly closeBtn: HTMLButtonElement
@@ -26,6 +25,7 @@ export class DetailView {
   private project: Project | null = null
   private imageIndex = 0
   private originSlug = ''
+  private originThumbEl: HTMLElement | null = null
   private originThumbRect: Rect | null = null
   private isOpen = false
   private animating = false
@@ -45,9 +45,6 @@ export class DetailView {
     this.img = document.createElement('img')
     this.img.className = 'detail-image'
     this.img.draggable = false
-
-    this.caption = document.createElement('p')
-    this.caption.className = 'piece-caption'
 
     this.prevBtn = document.createElement('button')
     this.prevBtn.type = 'button'
@@ -70,7 +67,7 @@ export class DetailView {
     this.closeBtn.textContent = '×'
 
     this.stage.append(this.img)
-    this.overlay.append(this.closeBtn, this.stage, this.caption, this.prevBtn, this.nextBtn)
+    this.overlay.append(this.closeBtn, this.stage, this.prevBtn, this.nextBtn)
     this.root.appendChild(this.overlay)
 
     this.overlay.addEventListener('click', (e) => {
@@ -93,6 +90,7 @@ export class DetailView {
     })
 
     window.addEventListener('keydown', this.onKeyDown)
+    window.addEventListener('resize', this.onResize)
     this.stage.addEventListener('touchstart', this.onTouchStart, { passive: true })
     this.stage.addEventListener('touchend', this.onTouchEnd, { passive: true })
   }
@@ -113,12 +111,19 @@ export class DetailView {
     this.step(dx < 0 ? 1 : -1)
   }
 
+  private onResize = () => {
+    if (!this.isOpen || this.animating) return
+    this.cancelImgAnimations()
+    this.resetImgStyles()
+  }
+
   open(project: Project, thumbEl: HTMLElement, imageIndex = 0) {
     if (this.animating) return
 
     this.cancelImgAnimations()
     this.resetImgStyles()
 
+    this.originThumbEl = thumbEl
     this.originThumbRect = thumbImageRect(thumbEl)
     this.options.freezeCanvas()
 
@@ -127,7 +132,6 @@ export class DetailView {
     this.originSlug = project.slug
     this.isOpen = true
     this.overlay.hidden = false
-    this.caption.style.opacity = '0'
     this.root.classList.add('detail-active')
     this.updateNav()
 
@@ -150,6 +154,15 @@ export class DetailView {
     this.resetImgStyles()
   }
 
+  private thumbRectForClose(): Rect | null {
+    if (this.originThumbEl?.isConnected) {
+      return thumbImageRect(this.originThumbEl)
+    }
+    const fallback = this.options.getThumbBySlug(this.originSlug)
+    if (fallback) return thumbImageRect(fallback)
+    return this.originThumbRect
+  }
+
   private applyImage(token: number, crossfade: boolean, onReady: () => void) {
     if (!this.project) return
     const item = this.project.images[this.imageIndex]
@@ -168,7 +181,6 @@ export class DetailView {
     const show = () => {
       if (token !== this.loadToken) return
       this.img.alt = item.alt
-      this.caption.textContent = item.caption
       onReady()
     }
 
@@ -199,7 +211,6 @@ export class DetailView {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const from = this.originThumbRect
     if (!from || reduced || this.img.naturalWidth === 0) {
-      this.caption.style.opacity = '1'
       return
     }
 
@@ -216,20 +227,17 @@ export class DetailView {
     })
     anim.onfinish = () => {
       this.resetImgStyles()
-      this.caption.style.opacity = '1'
       this.animating = false
     }
     anim.oncancel = () => {
       this.resetImgStyles()
-      this.caption.style.opacity = '1'
       this.animating = false
     }
   }
 
   private runFlipClose(onDone: () => void) {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const thumbEl = this.options.getThumbBySlug(this.originSlug)
-    const from = thumbEl ? thumbImageRect(thumbEl) : this.originThumbRect
+    const from = this.thumbRectForClose()
 
     if (!from || reduced || this.img.naturalWidth === 0) {
       this.animating = true
@@ -250,7 +258,6 @@ export class DetailView {
     const k = flipKeyframes(from, to)
 
     this.animating = true
-    this.caption.style.opacity = '0'
     const anim = this.img.animate([k.to, k.from], {
       duration: ZOOM_MS,
       easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
@@ -272,9 +279,9 @@ export class DetailView {
       this.isOpen = false
       this.project = null
       this.originSlug = ''
+      this.originThumbEl = null
       this.originThumbRect = null
       this.overlay.hidden = true
-      this.caption.style.opacity = ''
       this.root.classList.remove('detail-active')
       this.options.unfreezeCanvas()
       this.options.onClose()
@@ -312,6 +319,7 @@ export class DetailView {
 
   destroy() {
     window.removeEventListener('keydown', this.onKeyDown)
+    window.removeEventListener('resize', this.onResize)
   }
 }
 

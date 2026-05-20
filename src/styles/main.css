@@ -6,6 +6,8 @@
 
   --detail-backdrop-opacity: 0.25;
   --detail-backdrop-blur: 6px;
+  --detail-pad-x: 80px;
+  --detail-pad-y: 40px;
 
   font-family:
     'Chicago',
@@ -131,9 +133,10 @@ body {
   position: fixed;
   inset: 0;
   z-index: 20;
-  display: grid;
-  place-items: center;
-  grid-template-rows: 1fr auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--detail-pad-y) var(--detail-pad-x);
   background: transparent;
   pointer-events: auto;
   cursor: zoom-out;
@@ -144,18 +147,20 @@ body {
 }
 
 .detail-stage {
-  position: relative;
-  width: min(90vw, 1100px);
-  height: min(72vh, 720px);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  max-width: calc(100vw - var(--detail-pad-x) * 2);
+  max-height: calc(100vh - var(--detail-pad-y) * 2);
   pointer-events: none;
-  transform-origin: center center;
 }
 
 .detail-image {
-  max-width: 100%;
-  max-height: 100%;
+  display: block;
+  max-width: calc(100vw - var(--detail-pad-x) * 2);
+  max-height: calc(100vh - var(--detail-pad-y) * 2);
   width: auto;
   height: auto;
   object-fit: contain;
@@ -163,19 +168,6 @@ body {
   background: transparent;
   pointer-events: none;
   transform-origin: center center;
-  will-change: transform, opacity;
-}
-
-.piece-caption {
-  margin: 0;
-  padding: 14px 24px 24px;
-  font-size: 15px;
-  line-height: 1.5;
-  letter-spacing: 0.02em;
-  max-width: min(90vw, 70ch);
-  text-align: center;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
 }
 
 .detail-nav {
@@ -205,11 +197,11 @@ body {
 }
 
 .detail-nav-prev {
-  left: max(8px, calc(50% - min(45vw, 550px) - 64px));
+  left: max(12px, calc(var(--detail-pad-x) - 64px));
 }
 
 .detail-nav-next {
-  right: max(8px, calc(50% - min(45vw, 550px) - 64px));
+  right: max(12px, calc(var(--detail-pad-x) - 64px));
 }
 
 .detail-close {
@@ -235,6 +227,8 @@ body {
 @media (max-width: 900px) {
   :root {
     --tile-size: 200px;
+    --detail-pad-x: 56px;
+    --detail-pad-y: 28px;
   }
 
   .detail-nav-prev {
@@ -254,6 +248,8 @@ body {
 @media (min-width: 3000px) {
   :root {
     --tile-size: 260px;
+    --detail-pad-x: 96px;
+    --detail-pad-y: 48px;
   }
 }
 

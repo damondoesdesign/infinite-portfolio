@@ -69,13 +69,12 @@ function readInfoJson(dir, slug) {
   return null
 }
 
-function captionForFile(info, filename, title, fallbackLabel) {
+function captionForFile(info, filename) {
   const key = basename(filename)
   const fromInfo = info?.captions?.[key] ?? info?.captions?.[filename]
   if (fromInfo) return fromInfo
   if (info?.caption && !info.captions) return info.caption
-  const label = fallbackLabel.replace(/\b\w/g, (c) => c.toUpperCase())
-  return label ? `${title}. ${label}.` : `${title}.`
+  return ''
 }
 
 function isImageFile(name) {
@@ -147,7 +146,7 @@ function buildImages(slug, title, srcDir, files, info) {
     const label = basename(file, extname(file))
       .replace(/[-_]/g, ' ')
       .trim()
-    const cap = captionForFile(info, file, title, label || `image ${i + 1}`)
+    const cap = captionForFile(info, file)
     return {
       file: `/images/projects/${slug}/${file}`,
       alt: info?.alts?.[file] ?? `${title} — ${label || `image ${i + 1}`}`,
@@ -234,7 +233,7 @@ function syncLooseImage(filename, sortIndex) {
       {
         file: `/images/projects/${slug}/${filename}`,
         alt: info?.alt ?? `${title}`,
-        caption: captionForFile(info, filename, title, label),
+        caption: captionForFile(info, filename),
       },
     ],
   }
