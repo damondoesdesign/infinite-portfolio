@@ -1,45 +1,23 @@
 import { assetUrl } from './assetUrl'
 
-const assigned = new WeakMap<HTMLImageElement, string>()
-
-function gifUrl(path: string) {
-  const base = assetUrl(path)
-  return `${base}${base.includes('?') ? '&' : '?'}_=${Date.now()}`
+export interface SetImageOptions {
+  /** Detail view and first paint — avoid lazy-load blanks. */
+  eager?: boolean
 }
 
-/** Load image; GIFs use a fresh element so animation plays in pooled tiles. */
+/**
+ * Assign src on a stable <img> node. Never replaces the element (GIFs stay animated).
+ */
 export function setImageSrc(
   img: HTMLImageElement,
-  filePath: string
-): HTMLImageElement {
-  const isGif = /\.gif$/i.test(filePath)
-  const url = isGif ? gifUrl(filePath) : assetUrl(filePath)
-  const prev = assigned.get(img)
+  filePath: string,
+  options: SetImageOptions = {}
+): void {
+  if (img.dataset.srcKey === filePath) return
 
-  if (prev === filePath) return img
-
-  if (isGif) {
-    const parent = img.parentElement
-    if (parent) {
-      const next = document.createElement('img')
-      next.className = img.className
-      next.alt = img.alt
-      next.draggable = false
-      next.loading = 'eager'
-      next.decoding = 'sync'
-      next.src = url
-      parent.replaceChild(next, img)
-      assigned.set(next, filePath)
-      return next
-    }
-    img.loading = 'eager'
-    img.src = url
-    assigned.set(img, filePath)
-    return img
-  }
-
-  assigned.set(img, filePath)
-  img.loading = 'lazy'
+  img.dataset.srcKey = filePath
+  const url = assetUrl(filePath)
+  img.loading = options.eager ? 'eager' : 'lazy'
+  img.decoding = 'async'
   img.src = url
-  return img
 }

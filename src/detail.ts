@@ -3,6 +3,7 @@ import { setImageSrc } from './setImageSrc'
 import type { Project } from './types'
 
 const ZOOM_MS = 580
+const LOAD_TIMEOUT_MS = 8000
 
 interface DetailOptions {
   onClose: () => void
@@ -16,7 +17,7 @@ export class DetailView {
   private readonly root: HTMLElement
   private readonly overlay: HTMLElement
   private readonly stage: HTMLElement
-  private img: HTMLImageElement
+  private readonly img: HTMLImageElement
   private readonly caption: HTMLElement
   private readonly prevBtn: HTMLButtonElement
   private readonly nextBtn: HTMLButtonElement
@@ -28,6 +29,7 @@ export class DetailView {
   private originThumbRect: Rect | null = null
   private isOpen = false
   private animating = false
+  private loadToken = 0
 
   constructor(root: HTMLElement, options: DetailOptions) {
     this.options = options
@@ -114,6 +116,9 @@ export class DetailView {
   open(project: Project, thumbEl: HTMLElement, imageIndex = 0) {
     if (this.animating) return
 
+    this.cancelImgAnimations()
+    this.resetImgStyles()
+
     this.originThumbRect = thumbImageRect(thumbEl)
     this.options.freezeCanvas()
 
@@ -124,48 +129,100 @@ export class DetailView {
     this.overlay.hidden = false
     this.caption.style.opacity = '0'
     this.root.classList.add('detail-active')
-    this.renderImage(false)
     this.updateNav()
 
-    this.waitForImage(() => this.runFlipOpen())
+    const token = ++this.loadToken
+    this.applyImage(token, false, () => {
+      if (token !== this.loadToken) return
+      this.runFlipOpen()
+    })
   }
 
-  private waitForImage(cb: () => void) {
+  private resetImgStyles() {
+    this.img.style.transform = ''
+    this.img.style.opacity = '1'
+  }
+
+  private cancelImgAnimations() {
+    for (const anim of this.img.getAnimations()) {
+      anim.cancel()
+    }
+    this.resetImgStyles()
+  }
+
+  private applyImage(token: number, crossfade: boolean, onReady: () => void) {
+    if (!this.project) return
+    const item = this.project.images[this.imageIndex]
+    if (!item) return
+
+    if (crossfade && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      this.cancelImgAnimations()
+      this.img.animate([{ opacity: 0.35 }, { opacity: 1 }], {
+        duration: 220,
+        easing: 'ease-out',
+      })
+    }
+
+    setImageSrc(this.img, item.file, { eager: true })
+
+    const show = () => {
+      if (token !== this.loadToken) return
+      this.img.alt = item.alt
+      this.caption.textContent = item.caption
+      onReady()
+    }
+
+    this.waitForImageLoad(show)
+  }
+
+  private waitForImageLoad(cb: () => void) {
+    const run = () => requestAnimationFrame(() => requestAnimationFrame(cb))
+
     if (this.img.complete && this.img.naturalWidth > 0) {
-      requestAnimationFrame(() => requestAnimationFrame(cb))
+      run()
       return
     }
+
+    const timeout = window.setTimeout(run, LOAD_TIMEOUT_MS)
     const done = () => {
+      clearTimeout(timeout)
       this.img.removeEventListener('load', done)
-      requestAnimationFrame(() => requestAnimationFrame(cb))
+      this.img.removeEventListener('error', done)
+      run()
     }
     this.img.addEventListener('load', done, { once: true })
+    this.img.addEventListener('error', done, { once: true })
   }
 
   private runFlipOpen() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const from = this.originThumbRect
-    if (!from || reduced) {
+    if (!from || reduced || this.img.naturalWidth === 0) {
       this.caption.style.opacity = '1'
       return
     }
+
+    this.cancelImgAnimations()
 
     const to = visualImageRect(this.img)
     const k = flipKeyframes(from, to)
 
     this.animating = true
-    this.img
-      .animate([k.from, k.to], {
-        duration: ZOOM_MS,
-        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-        fill: 'both',
-      })
-      .onfinish = () => {
-        this.img.style.transform = ''
-        this.img.style.opacity = ''
-        this.caption.style.opacity = '1'
-        this.animating = false
-      }
+    const anim = this.img.animate([k.from, k.to], {
+      duration: ZOOM_MS,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      fill: 'forwards',
+    })
+    anim.onfinish = () => {
+      this.resetImgStyles()
+      this.caption.style.opacity = '1'
+      this.animating = false
+    }
+    anim.oncancel = () => {
+      this.resetImgStyles()
+      this.caption.style.opacity = '1'
+      this.animating = false
+    }
   }
 
   private runFlipClose(onDone: () => void) {
@@ -173,40 +230,44 @@ export class DetailView {
     const thumbEl = this.options.getThumbBySlug(this.originSlug)
     const from = thumbEl ? thumbImageRect(thumbEl) : this.originThumbRect
 
-    if (!from || reduced) {
+    if (!from || reduced || this.img.naturalWidth === 0) {
       this.animating = true
-      this.img
-        .animate([{ opacity: 1 }, { opacity: 0 }], { duration: 260, fill: 'forwards' })
-        .onfinish = () => {
-          this.animating = false
-          onDone()
-        }
+      const anim = this.img.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 260,
+        fill: 'forwards',
+      })
+      anim.onfinish = () => {
+        this.animating = false
+        onDone()
+      }
       return
     }
+
+    this.cancelImgAnimations()
 
     const to = visualImageRect(this.img)
     const k = flipKeyframes(from, to)
 
     this.animating = true
     this.caption.style.opacity = '0'
-    this.img
-      .animate([k.to, k.from], {
-        duration: ZOOM_MS,
-        easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-        fill: 'forwards',
-      })
-      .onfinish = () => {
-        this.img.style.transform = ''
-        this.img.style.opacity = ''
-        this.animating = false
-        onDone()
-      }
+    const anim = this.img.animate([k.to, k.from], {
+      duration: ZOOM_MS,
+      easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+      fill: 'forwards',
+    })
+    anim.onfinish = () => {
+      this.resetImgStyles()
+      this.animating = false
+      onDone()
+    }
   }
 
   close() {
     if (!this.isOpen || this.animating) return
 
     const finish = () => {
+      this.loadToken++
+      this.cancelImgAnimations()
       this.isOpen = false
       this.project = null
       this.originSlug = ''
@@ -226,34 +287,11 @@ export class DetailView {
     const len = this.project.images.length
     if (len <= 1) return
     this.imageIndex = (this.imageIndex + delta + len) % len
-    this.renderImage(true)
-  }
-
-  private renderImage(animate: boolean) {
-    if (!this.project) return
-    const item = this.project.images[this.imageIndex]
-    if (!item) return
-
-    const swap = () => {
-      const next = setImageSrc(this.img, item.file)
-      if (next !== this.img) {
-        this.stage.replaceChild(next, this.img)
-        this.img = next
-      }
-      this.img.alt = item.alt
-      this.caption.textContent = item.caption
-    }
-
-    if (!animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      swap()
-      return
-    }
-
-    this.img.animate([{ opacity: 0.12 }, { opacity: 1 }], {
-      duration: 220,
-      easing: 'ease-out',
+    const token = ++this.loadToken
+    this.applyImage(token, true, () => {
+      if (token !== this.loadToken) return
+      this.resetImgStyles()
     })
-    swap()
   }
 
   private updateNav() {

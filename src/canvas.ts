@@ -20,13 +20,24 @@ interface CanvasOptions {
   onOpenProject: (project: Project, thumbEl: HTMLElement, imageIndex: number) => void
 }
 
+interface VisibleCell {
+  col: number
+  row: number
+  x: number
+  y: number
+  project: Project
+}
+
 interface PooledTile {
   el: HTMLButtonElement
   img: HTMLImageElement
   fileKey: string
   projectSlug: string
+  lastCol: number
+  lastRow: number
   lastX: number
   lastY: number
+  slotHidden: boolean
 }
 
 export class InfiniteCanvas {
@@ -35,8 +46,8 @@ export class InfiniteCanvas {
   private readonly world: HTMLElement
   private readonly projects: Project[]
 
-  private readonly active = new Map<string, PooledTile>()
-  private readonly pool: HTMLButtonElement[] = []
+  /** Fixed DOM slots — reused every frame instead of release/recreate by grid key. */
+  private readonly slots: PooledTile[] = []
 
   private camX = 0
   private camY = 0
@@ -47,6 +58,7 @@ export class InfiniteCanvas {
   private frozen = false
   private frozenX = 0
   private frozenY = 0
+  private skipTileSync = false
 
   private dragging = false
   private dragPointerId: number | null = null
@@ -92,10 +104,13 @@ export class InfiniteCanvas {
     this.velX = 0
     this.velY = 0
     this.dragging = false
+    this.skipTileSync = true
+    this.syncTiles()
   }
 
   unfreeze() {
     this.frozen = false
+    this.skipTileSync = false
   }
 
   setEnabled(value: boolean) {
@@ -109,8 +124,12 @@ export class InfiniteCanvas {
   }
 
   getThumbBySlug(slug: string): HTMLElement | null {
-    for (const pooled of this.active.values()) {
-      if (pooled.projectSlug === slug && pooled.el.style.visibility !== 'hidden') {
+    for (const pooled of this.slots) {
+      if (
+        !pooled.slotHidden &&
+        pooled.projectSlug === slug &&
+        pooled.el.style.opacity !== '0'
+      ) {
         return pooled.el
       }
     }
@@ -143,10 +162,6 @@ export class InfiniteCanvas {
     }
   }
 
-  private cellKey(col: number, row: number) {
-    return `${col},${row}`
-  }
-
   private projectAt(col: number, row: number, cols: number, rows: number): Project | null {
     if (this.projects.length === 0) return null
     const wrappedCol = ((col % cols) + cols) % cols
@@ -155,41 +170,48 @@ export class InfiniteCanvas {
     return this.projects[idx] ?? null
   }
 
-  private acquireTile(): PooledTile {
-    let el = this.pool.pop()
-    if (!el) {
-      el = document.createElement('button')
-      el.type = 'button'
-      el.className = 'canvas-tile'
-      const img = document.createElement('img')
-      img.draggable = false
-      el.appendChild(img)
-      this.world.appendChild(el)
-    }
-    const img = el.querySelector('img')!
-    return {
+  private ensureSlot(index: number): PooledTile {
+    let pooled = this.slots[index]
+    if (pooled) return pooled
+
+    const el = document.createElement('button')
+    el.type = 'button'
+    el.className = 'canvas-tile'
+    el.style.opacity = '0'
+    el.style.pointerEvents = 'none'
+
+    const img = document.createElement('img')
+    img.draggable = false
+    el.appendChild(img)
+    this.world.appendChild(el)
+
+    pooled = {
       el,
       img,
       fileKey: '',
       projectSlug: '',
+      lastCol: NaN,
+      lastRow: NaN,
       lastX: NaN,
       lastY: NaN,
+      slotHidden: true,
     }
+    this.slots[index] = pooled
+    return pooled
   }
 
-  private releaseTile(key: string) {
-    const pooled = this.active.get(key)
-    if (!pooled) return
-    pooled.el.style.visibility = 'hidden'
+  private hideSlot(pooled: PooledTile) {
+    if (pooled.slotHidden) return
+    pooled.slotHidden = true
+    pooled.el.style.opacity = '0'
     pooled.el.style.pointerEvents = 'none'
-    pooled.projectSlug = ''
-    this.pool.push(pooled.el)
-    this.active.delete(key)
   }
 
   private bindTile(
     pooled: PooledTile,
     project: Project,
+    col: number,
+    row: number,
     x: number,
     y: number
   ) {
@@ -197,11 +219,7 @@ export class InfiniteCanvas {
     const slug = project.slug
 
     if (pooled.projectSlug !== slug || pooled.fileKey !== cover.file) {
-      const nextImg = setImageSrc(pooled.img, cover.file)
-      if (nextImg !== pooled.img) {
-        pooled.el.replaceChild(nextImg, pooled.img)
-        pooled.img = nextImg
-      }
+      setImageSrc(pooled.img, cover.file, { eager: /\.gif$/i.test(cover.file) })
       pooled.fileKey = cover.file
       pooled.projectSlug = slug
       pooled.el.dataset.slug = slug
@@ -222,8 +240,12 @@ export class InfiniteCanvas {
       }
     }
 
-    pooled.el.style.visibility = 'visible'
+    pooled.slotHidden = false
+    pooled.el.style.opacity = '1'
     pooled.el.style.pointerEvents = this.enabled ? 'auto' : 'none'
+
+    pooled.lastCol = col
+    pooled.lastRow = row
 
     if (pooled.lastX !== x || pooled.lastY !== y) {
       pooled.el.style.transform = `translate3d(${x}px, ${y}px, 0)`
@@ -232,9 +254,14 @@ export class InfiniteCanvas {
     }
   }
 
-  private syncTiles = () => {
-    if (this.projects.length === 0) return
+  private findFreeSlot(assigned: Set<number>): number {
+    for (let i = 0; i < this.slots.length; i++) {
+      if (!assigned.has(i)) return i
+    }
+    return this.slots.length
+  }
 
+  private collectVisibleCells(): VisibleCell[] {
     const grid = getGridDimensions()
     const viewW = window.innerWidth
     const viewH = window.innerHeight
@@ -247,7 +274,7 @@ export class InfiniteCanvas {
     const startRow = Math.floor(-camY / TILE_PITCH) - buf
     const endRow = Math.ceil((viewH - camY) / TILE_PITCH) + buf
 
-    const needed = new Set<string>()
+    const cells: VisibleCell[] = []
 
     for (let row = startRow; row <= endRow; row++) {
       for (let col = startCol; col <= endCol; col++) {
@@ -266,20 +293,60 @@ export class InfiniteCanvas {
           continue
         }
 
-        const key = this.cellKey(col, row)
-        needed.add(key)
-
-        let pooled = this.active.get(key)
-        if (!pooled) {
-          pooled = this.acquireTile()
-          this.active.set(key, pooled)
-        }
-        this.bindTile(pooled, project, x, y)
+        cells.push({ col, row, x, y, project })
       }
     }
 
-    for (const key of [...this.active.keys()]) {
-      if (!needed.has(key)) this.releaseTile(key)
+    return cells
+  }
+
+  private syncTiles = () => {
+    if (this.projects.length === 0) return
+
+    const cells = this.collectVisibleCells()
+    const assigned = new Set<number>()
+    const pending: VisibleCell[] = []
+
+    for (const cell of cells) {
+      let matched = -1
+      for (let s = 0; s < this.slots.length; s++) {
+        const slot = this.slots[s]
+        if (!slot || assigned.has(s)) continue
+        if (slot.lastCol === cell.col && slot.lastRow === cell.row) {
+          matched = s
+          break
+        }
+      }
+      if (matched >= 0) {
+        assigned.add(matched)
+        this.bindTile(
+          this.ensureSlot(matched),
+          cell.project,
+          cell.col,
+          cell.row,
+          cell.x,
+          cell.y
+        )
+      } else {
+        pending.push(cell)
+      }
+    }
+
+    for (const cell of pending) {
+      const index = this.findFreeSlot(assigned)
+      assigned.add(index)
+      this.bindTile(
+        this.ensureSlot(index),
+        cell.project,
+        cell.col,
+        cell.row,
+        cell.x,
+        cell.y
+      )
+    }
+
+    for (let s = 0; s < this.slots.length; s++) {
+      if (!assigned.has(s) && this.slots[s]) this.hideSlot(this.slots[s])
     }
   }
 
@@ -288,7 +355,9 @@ export class InfiniteCanvas {
     window.addEventListener('pointermove', this.onPointerMove)
     window.addEventListener('pointerup', this.onPointerUp)
     window.addEventListener('pointercancel', this.onPointerUp)
-    window.addEventListener('resize', this.syncTiles)
+    window.addEventListener('resize', () => {
+      if (!this.skipTileSync) this.syncTiles()
+    })
   }
 
   private onPointerDown = (e: PointerEvent) => {
@@ -395,7 +464,7 @@ export class InfiniteCanvas {
       this.camY = lerp(this.camY, this.targetY, lerpFactor)
     }
 
-    this.syncTiles()
+    if (!this.skipTileSync) this.syncTiles()
     this.rafId = requestAnimationFrame(this.loop)
   }
 
@@ -414,6 +483,5 @@ export class InfiniteCanvas {
     window.removeEventListener('pointermove', this.onPointerMove)
     window.removeEventListener('pointerup', this.onPointerUp)
     window.removeEventListener('pointercancel', this.onPointerUp)
-    window.removeEventListener('resize', this.syncTiles)
   }
 }

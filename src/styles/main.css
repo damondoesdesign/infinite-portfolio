@@ -91,7 +91,6 @@ body {
   background: transparent;
   cursor: pointer;
   overflow: hidden;
-  will-change: transform;
   pointer-events: auto;
   contain: layout style paint;
 }
