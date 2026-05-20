@@ -1,11 +1,21 @@
 DROP IMAGES HERE
 ================
 
-Single piece — put an image file here:
-  drop/my-neon-sign.jpg
+Single piece — image in this folder:
+  my-work.jpg
+  my-work.info.json   (optional title + caption)
 
-Collection (carousel) — put a folder with 2–5 images:
-  drop/my-series/01.jpg
-  drop/my-series/02.jpg
+Collection (carousel) — folder with 2–5 images:
+  winter-series/01.jpg
+  winter-series/info.json
 
-Then tell Cursor "sync the gallery" or run: npm run publish
+info.json example:
+{
+  "title": "Winter Series",
+  "year": 2025,
+  "captions": {
+    "01.jpg": "First frame description."
+  }
+}
+
+Then say "sync the gallery" in Cursor.

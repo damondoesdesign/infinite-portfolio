@@ -1,31 +1,43 @@
 import { assetUrl } from './assetUrl'
 import {
-  buildTileLayouts,
   getCoverImage,
   getProjects,
   getWorldSize,
+  projectIndexForCell,
+  TILE_PITCH,
   TILE_SIZE,
 } from './content'
 import { clamp, lerp, prefersReducedMotion } from './motion'
-import type { Project, TileLayout } from './types'
+import type { Project } from './types'
 
 const DRAG_THRESHOLD = 8
 const PAN_LERP = 0.14
 const DRIFT_STRENGTH = 0.045
 const INERTIA_DECAY = 0.9
 const TAP_MAX_MS = 320
+const SHADOW_PX = 5
+const SHADOW_OPACITY = 0.15
 
 interface CanvasOptions {
   onOpenProject: (project: Project, thumbEl: HTMLElement, imageIndex: number) => void
+}
+
+interface PooledTile {
+  el: HTMLButtonElement
+  img: HTMLImageElement
+  col: number
+  row: number
 }
 
 export class InfiniteCanvas {
   private readonly root: HTMLElement
   private readonly viewport: HTMLElement
   private readonly world: HTMLElement
-  private readonly tiles: TileLayout[]
-  private readonly worldSize: { width: number; height: number }
-  private readonly tileEls = new Map<number, HTMLElement>()
+  private readonly projects: Project[]
+  private readonly worldSize: ReturnType<typeof getWorldSize>
+
+  private readonly active = new Map<string, PooledTile>()
+  private readonly pool: HTMLButtonElement[] = []
 
   private camX = 0
   private camY = 0
@@ -45,10 +57,10 @@ export class InfiniteCanvas {
   private pressedTile: HTMLElement | null = null
   private pressedProject: Project | null = null
   private tilePointerId: number | null = null
-  private onOpenProject: CanvasOptions['onOpenProject']
+  private readonly onOpenProject: CanvasOptions['onOpenProject']
 
-  private pointerX = 0
-  private pointerY = 0
+  private pointerX = window.innerWidth / 2
+  private pointerY = window.innerHeight / 2
   private hasPointer = false
   private rafId = 0
   private enabled = true
@@ -56,8 +68,8 @@ export class InfiniteCanvas {
   constructor(root: HTMLElement, options: CanvasOptions) {
     this.root = root
     this.onOpenProject = options.onOpenProject
-    this.tiles = buildTileLayouts(getProjects())
-    this.worldSize = getWorldSize(this.tiles.length)
+    this.projects = getProjects()
+    this.worldSize = getWorldSize(this.projects.length)
 
     this.viewport = document.createElement('div')
     this.viewport.className = 'canvas-viewport'
@@ -66,31 +78,20 @@ export class InfiniteCanvas {
     this.world.className = 'canvas-world'
     this.viewport.appendChild(this.world)
 
-    for (const tile of this.tiles) {
-      const el = this.createTile(tile)
-      this.tileEls.set(tile.index, el)
-      this.world.appendChild(el)
-    }
-
     this.root.appendChild(this.viewport)
     this.centerCamera()
     this.bindEvents()
     this.loop()
   }
 
-  private centerCamera() {
-    const cx = (window.innerWidth - this.worldSize.width) / 2
-    const cy = (window.innerHeight - this.worldSize.height) / 2
-    this.camX = cx
-    this.camY = cy
-    this.targetX = cx
-    this.targetY = cy
-    this.syncTiles()
-  }
-
   setEnabled(value: boolean) {
     this.enabled = value
-    this.viewport.classList.toggle('is-disabled', !value)
+    this.viewport.classList.toggle('is-paused', !value)
+    if (!value) {
+      this.velX = 0
+      this.velY = 0
+      this.dragging = false
+    }
   }
 
   getCamera() {
@@ -107,39 +108,185 @@ export class InfiniteCanvas {
     this.syncTiles()
   }
 
-  getTileElement(index: number) {
-    return this.tileEls.get(index)
+  getTileElement(_index: number) {
+    return null
   }
 
-  getProjectIndex(project: Project) {
-    return this.tiles.findIndex((t) => t.project.slug === project.slug)
+  private centerCamera() {
+    const cx = (window.innerWidth - this.worldSize.width) / 2
+    const cy = (window.innerHeight - this.worldSize.height) / 2
+    this.camX = cx
+    this.camY = cy
+    this.targetX = cx
+    this.targetY = cy
+    this.syncTiles()
   }
 
-  private createTile(tile: TileLayout): HTMLElement {
-    const cover = getCoverImage(tile.project)
-    const button = document.createElement('button')
-    button.type = 'button'
-    button.className = 'canvas-tile'
-    button.dataset.index = String(tile.index)
-    button.setAttribute('aria-label', `Open ${tile.project.title}`)
+  private normalizeCamera() {
+    const { width, height } = this.worldSize
+    const limitX = width * 6
+    const limitY = height * 6
+    if (Math.abs(this.targetX) > limitX) {
+      const shift = Math.sign(this.targetX) * width * 4
+      this.targetX -= shift
+      this.camX -= shift
+    }
+    if (Math.abs(this.targetY) > limitY) {
+      const shift = Math.sign(this.targetY) * height * 4
+      this.targetY -= shift
+      this.camY -= shift
+    }
+  }
 
-    const img = document.createElement('img')
-    img.src = assetUrl(cover.file)
-    img.alt = cover.alt
-    img.width = TILE_SIZE
-    img.height = TILE_SIZE
-    img.draggable = false
-    img.loading = 'lazy'
-    button.appendChild(img)
+  private cellKey(col: number, row: number) {
+    return `${col},${row}`
+  }
 
-    if (tile.project.images.length > 1) {
-      const badge = document.createElement('span')
-      badge.className = 'canvas-tile-badge'
-      badge.textContent = String(tile.project.images.length)
-      button.appendChild(badge)
+  private projectAt(col: number, row: number): Project | null {
+    if (this.projects.length === 0) return null
+    const wrappedCol =
+      ((col % this.worldSize.cols) + this.worldSize.cols) % this.worldSize.cols
+    const wrappedRow =
+      ((row % this.worldSize.rows) + this.worldSize.rows) % this.worldSize.rows
+    const idx = projectIndexForCell(wrappedCol, wrappedRow, this.projects.length)
+    return this.projects[idx] ?? null
+  }
+
+  private acquireTile(): PooledTile {
+    let el = this.pool.pop()
+    if (!el) {
+      el = document.createElement('button')
+      el.type = 'button'
+      el.className = 'canvas-tile'
+      const img = document.createElement('img')
+      img.draggable = false
+      img.loading = 'lazy'
+      el.appendChild(img)
+      this.world.appendChild(el)
+    }
+    const img = el.querySelector('img')!
+    return { el, img, col: 0, row: 0 }
+  }
+
+  private releaseTile(key: string) {
+    const pooled = this.active.get(key)
+    if (!pooled) return
+    pooled.el.style.visibility = 'hidden'
+    pooled.el.style.pointerEvents = 'none'
+    this.pool.push(pooled.el)
+    this.active.delete(key)
+  }
+
+  private bindTile(
+    pooled: PooledTile,
+    col: number,
+    row: number,
+    project: Project,
+    x: number,
+    y: number
+  ) {
+    const cover = getCoverImage(project)
+    pooled.col = col
+    pooled.row = row
+    pooled.el.dataset.slug = project.slug
+    pooled.el.setAttribute('aria-label', `Open ${project.title}`)
+
+    if (pooled.img.src !== assetUrl(cover.file)) {
+      pooled.img.src = assetUrl(cover.file)
+    }
+    pooled.img.alt = cover.alt
+
+    let badge = pooled.el.querySelector<HTMLElement>('.canvas-tile-badge')
+    if (project.images.length > 1) {
+      if (!badge) {
+        badge = document.createElement('span')
+        badge.className = 'canvas-tile-badge'
+        pooled.el.appendChild(badge)
+      }
+      badge.textContent = String(project.images.length)
+      badge.hidden = false
+    } else if (badge) {
+      badge.hidden = true
     }
 
-    return button
+    const half = TILE_SIZE / 2
+    const lightDx = clamp((this.pointerX - (x + half)) / window.innerWidth, -1, 1)
+    const lightDy = clamp((this.pointerY - (y + half)) / window.innerHeight, -1, 1)
+    const sx = -lightDx * SHADOW_PX
+    const sy = -lightDy * SHADOW_PX
+
+    pooled.el.style.visibility = 'visible'
+    pooled.el.style.pointerEvents = 'auto'
+    pooled.el.style.transform = `translate3d(${x}px, ${y}px, 0)`
+    pooled.el.style.boxShadow = `${sx}px ${sy}px ${SHADOW_PX}px rgba(0, 0, 0, ${SHADOW_OPACITY})`
+  }
+
+  private syncTiles = () => {
+    if (this.projects.length === 0) return
+
+    const { width, height } = this.worldSize
+    const viewW = window.innerWidth
+    const viewH = window.innerHeight
+    const margin = TILE_PITCH
+
+    const startCol = Math.floor((-this.camX - margin) / TILE_PITCH)
+    const endCol = Math.ceil((viewW - this.camX + margin) / TILE_PITCH)
+    const startRow = Math.floor((-this.camY - margin) / TILE_PITCH)
+    const endRow = Math.ceil((viewH - this.camY + margin) / TILE_PITCH)
+
+    const needed = new Set<string>()
+
+    for (let row = startRow; row <= endRow; row++) {
+      for (let col = startCol; col <= endCol; col++) {
+        const project = this.projectAt(col, row)
+        if (!project) continue
+
+        const baseX = col * TILE_PITCH
+        const baseY = row * TILE_PITCH
+
+        let bestX = baseX + this.camX
+        let bestY = baseY + this.camY
+        let bestDist = Infinity
+
+        for (let ox = -1; ox <= 1; ox++) {
+          for (let oy = -1; oy <= 1; oy++) {
+            const x = baseX + this.camX + ox * width
+            const y = baseY + this.camY + oy * height
+            const cx = x + TILE_SIZE / 2 - viewW / 2
+            const cy = y + TILE_SIZE / 2 - viewH / 2
+            const dist = cx * cx + cy * cy
+            if (dist < bestDist) {
+              bestDist = dist
+              bestX = x
+              bestY = y
+            }
+          }
+        }
+
+        if (
+          bestX < -margin ||
+          bestX > viewW + margin ||
+          bestY < -margin ||
+          bestY > viewH + margin
+        ) {
+          continue
+        }
+
+        const key = this.cellKey(col, row)
+        needed.add(key)
+
+        let pooled = this.active.get(key)
+        if (!pooled) {
+          pooled = this.acquireTile()
+          this.active.set(key, pooled)
+        }
+        this.bindTile(pooled, col, row, project, bestX, bestY)
+      }
+    }
+
+    for (const key of [...this.active.keys()]) {
+      if (!needed.has(key)) this.releaseTile(key)
+    }
   }
 
   private bindEvents() {
@@ -147,13 +294,12 @@ export class InfiniteCanvas {
     window.addEventListener('pointermove', this.onPointerMove)
     window.addEventListener('pointerup', this.onPointerUp)
     window.addEventListener('pointercancel', this.onPointerUp)
-    window.addEventListener('resize', this.syncTiles)
+    window.addEventListener('resize', () => this.centerCamera())
   }
 
   private onPointerDown = (e: PointerEvent) => {
     if (!this.enabled) return
-    const target = e.target as HTMLElement
-    const tile = target.closest<HTMLElement>('.canvas-tile')
+    const tile = (e.target as HTMLElement).closest<HTMLElement>('.canvas-tile')
 
     if (tile) {
       this.tilePointerId = e.pointerId
@@ -162,8 +308,8 @@ export class InfiniteCanvas {
       this.dragMoved = false
       this.pressTime = performance.now()
       this.pressedTile = tile
-      this.pressedProject =
-        this.tiles[Number(tile.dataset.index)]?.project ?? null
+      const slug = tile.dataset.slug
+      this.pressedProject = this.projects.find((p) => p.slug === slug) ?? null
       return
     }
 
@@ -176,17 +322,16 @@ export class InfiniteCanvas {
     this.dragMoved = false
     this.pressedTile = null
     this.pressedProject = null
-
     this.viewport.setPointerCapture(e.pointerId)
     this.viewport.classList.add('is-grabbing')
   }
 
   private onPointerMove = (e: PointerEvent) => {
-    if (!this.enabled) return
-
     this.pointerX = e.clientX
     this.pointerY = e.clientY
     this.hasPointer = true
+
+    if (!this.enabled) return
 
     if (e.pointerId === this.tilePointerId) {
       const dx = e.clientX - this.dragStartX
@@ -199,10 +344,7 @@ export class InfiniteCanvas {
 
     const dx = e.clientX - this.dragStartX
     const dy = e.clientY - this.dragStartY
-
-    if (!this.dragMoved && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
-      this.dragMoved = true
-    }
+    if (!this.dragMoved && Math.hypot(dx, dy) > DRAG_THRESHOLD) this.dragMoved = true
 
     if (this.dragMoved) {
       this.targetX = this.dragOriginX + dx
@@ -236,14 +378,13 @@ export class InfiniteCanvas {
     }
 
     if (e.pointerId !== this.dragPointerId) return
-
     this.dragging = false
     this.dragPointerId = null
     this.viewport.classList.remove('is-grabbing')
     try {
       this.viewport.releasePointerCapture(e.pointerId)
     } catch {
-      /* already released */
+      /* released */
     }
   }
 
@@ -255,7 +396,7 @@ export class InfiniteCanvas {
       this.applyDesktopDrift()
     }
 
-    if (!this.dragging && !reduced) {
+    if (this.enabled && !this.dragging && !reduced) {
       this.targetX += this.velX
       this.targetY += this.velY
       this.velX *= INERTIA_DECAY
@@ -264,6 +405,7 @@ export class InfiniteCanvas {
       if (Math.abs(this.velY) < 0.08) this.velY = 0
     }
 
+    this.normalizeCamera()
     this.camX = lerp(this.camX, this.targetX, lerpFactor)
     this.camY = lerp(this.camY, this.targetY, lerpFactor)
     this.syncTiles()
@@ -274,54 +416,12 @@ export class InfiniteCanvas {
   private applyDesktopDrift() {
     const coarse = window.matchMedia('(pointer: coarse)').matches
     if (coarse || !this.hasPointer) return
-
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 2
     const nx = clamp((this.pointerX - cx) / cx, -1, 1)
     const ny = clamp((this.pointerY - cy) / cy, -1, 1)
-
     this.targetX += nx * DRIFT_STRENGTH * 16
     this.targetY += ny * DRIFT_STRENGTH * 16
-  }
-
-  private syncTiles = () => {
-    const { width, height } = this.worldSize
-    const viewW = window.innerWidth
-    const viewH = window.innerHeight
-    const margin = TILE_SIZE * 2
-
-    for (const tile of this.tiles) {
-      const el = this.tileEls.get(tile.index)
-      if (!el) continue
-
-      let bestX = 0
-      let bestY = 0
-      let bestDist = Infinity
-
-      for (const ox of [-1, 0, 1]) {
-        for (const oy of [-1, 0, 1]) {
-          const x = tile.baseX + this.camX + ox * width
-          const y = tile.baseY + this.camY + oy * height
-          const dx = x + TILE_SIZE / 2 - viewW / 2
-          const dy = y + TILE_SIZE / 2 - viewH / 2
-          const dist = dx * dx + dy * dy
-          if (dist < bestDist) {
-            bestDist = dist
-            bestX = x
-            bestY = y
-          }
-        }
-      }
-
-      const visible =
-        bestX > -margin &&
-        bestX < viewW + margin &&
-        bestY > -margin &&
-        bestY < viewH + margin
-
-      el.style.display = visible ? '' : 'none'
-      el.style.transform = `translate3d(${bestX}px, ${bestY}px, 0)`
-    }
   }
 
   destroy() {
@@ -330,6 +430,5 @@ export class InfiniteCanvas {
     window.removeEventListener('pointermove', this.onPointerMove)
     window.removeEventListener('pointerup', this.onPointerUp)
     window.removeEventListener('pointercancel', this.onPointerUp)
-    window.removeEventListener('resize', this.syncTiles)
   }
 }

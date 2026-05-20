@@ -1,7 +1,7 @@
 import { assetUrl } from './assetUrl'
 import type { Project } from './types'
 
-const ZOOM_MS = 520
+const ZOOM_MS = 560
 
 interface DetailOptions {
   onClose: () => void
@@ -39,19 +39,21 @@ export class DetailView {
     this.img.draggable = false
 
     this.caption = document.createElement('p')
-    this.caption.className = 'detail-caption'
+    this.caption.className = 'piece-caption'
 
     this.prevBtn = document.createElement('button')
     this.prevBtn.type = 'button'
     this.prevBtn.className = 'detail-nav detail-nav-prev'
     this.prevBtn.setAttribute('aria-label', 'Previous image')
     this.prevBtn.innerHTML = iconChevron('left')
+    this.prevBtn.hidden = true
 
     this.nextBtn = document.createElement('button')
     this.nextBtn.type = 'button'
     this.nextBtn.className = 'detail-nav detail-nav-next'
     this.nextBtn.setAttribute('aria-label', 'Next image')
     this.nextBtn.innerHTML = iconChevron('right')
+    this.nextBtn.hidden = true
 
     this.closeBtn = document.createElement('button')
     this.closeBtn.type = 'button'
@@ -92,6 +94,8 @@ export class DetailView {
 
   private onTouchEnd = (e: TouchEvent) => {
     if (!this.isOpen) return
+    const len = this.project?.images.length ?? 0
+    if (len <= 1) return
     const endX = e.changedTouches[0]?.clientX ?? 0
     const dx = endX - this.touchStartX
     if (Math.abs(dx) < 48) return
@@ -111,47 +115,46 @@ export class DetailView {
     const thumbRect = thumbEl.getBoundingClientRect()
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    if (reduced) {
-      this.frame.style.opacity = '1'
-      return
-    }
-
-    this.animating = true
-    const frameRect = this.frame.getBoundingClientRect()
-    const dx =
-      thumbRect.left +
-      thumbRect.width / 2 -
-      (frameRect.left + frameRect.width / 2)
-    const dy =
-      thumbRect.top +
-      thumbRect.height / 2 -
-      (frameRect.top + frameRect.height / 2)
-    const sx = thumbRect.width / frameRect.width
-    const sy = thumbRect.height / frameRect.height
-
-    this.frame
-      .animate(
-        [
-          {
-            transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
-            opacity: 0.65,
-          },
-          { transform: 'translate(0, 0) scale(1, 1)', opacity: 1 },
-        ],
-        {
-          duration: ZOOM_MS,
-          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-          fill: 'both',
-        }
-      )
-      .onfinish = () => {
-        this.animating = false
+    requestAnimationFrame(() => {
+      if (reduced) {
+        this.frame.style.transform = 'none'
+        this.frame.style.opacity = '1'
+        return
       }
 
-    this.overlay.animate(
-      [{ opacity: 0 }, { opacity: 1 }],
-      { duration: ZOOM_MS * 0.6, easing: 'ease-out', fill: 'both' }
-    )
+      this.animating = true
+      const frameRect = this.frame.getBoundingClientRect()
+      const dx =
+        thumbRect.left +
+        thumbRect.width / 2 -
+        (frameRect.left + frameRect.width / 2)
+      const dy =
+        thumbRect.top +
+        thumbRect.height / 2 -
+        (frameRect.top + frameRect.height / 2)
+      const sx = thumbRect.width / frameRect.width
+      const sy = thumbRect.height / frameRect.height
+
+      this.frame
+        .animate(
+          [
+            {
+              transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
+              opacity: 0.7,
+            },
+            { transform: 'translate(0, 0) scale(1, 1)', opacity: 1 },
+          ],
+          {
+            duration: ZOOM_MS,
+            easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
+            fill: 'both',
+          }
+        )
+        .onfinish = () => {
+          this.animating = false
+          this.frame.style.transform = ''
+        }
+    })
   }
 
   close() {
@@ -164,6 +167,8 @@ export class DetailView {
       this.overlay.hidden = true
       this.root.classList.remove('detail-active')
       this.animating = false
+      this.frame.style.transform = ''
+      this.frame.style.opacity = ''
       this.options.onClose()
     }
 
@@ -173,21 +178,12 @@ export class DetailView {
     }
 
     this.animating = true
-    this.overlay
+    this.frame
       .animate(
-        [{ opacity: 1 }, { opacity: 0 }],
-        { duration: 280, easing: 'ease-in', fill: 'both' }
+        [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.96)' }],
+        { duration: 300, easing: 'ease-in', fill: 'forwards' }
       )
       .onfinish = finish
-
-    this.frame.animate(
-      [{ opacity: 1 }, { opacity: 0.4 }],
-      { duration: 280, easing: 'ease-in', fill: 'both' }
-    )
-  }
-
-  isDetailOpen() {
-    return this.isOpen
   }
 
   private step(delta: number) {
@@ -215,8 +211,8 @@ export class DetailView {
     }
 
     this.img.animate(
-      [{ opacity: 0.2 }, { opacity: 1 }],
-      { duration: 220, easing: 'ease-out' }
+      [{ opacity: 0.15 }, { opacity: 1 }],
+      { duration: 240, easing: 'ease-out' }
     )
     swap()
   }
@@ -225,6 +221,8 @@ export class DetailView {
     const multi = (this.project?.images.length ?? 0) > 1
     this.prevBtn.hidden = !multi
     this.nextBtn.hidden = !multi
+    this.prevBtn.style.display = multi ? '' : 'none'
+    this.nextBtn.style.display = multi ? '' : 'none'
   }
 
   private onKeyDown = (e: KeyboardEvent) => {

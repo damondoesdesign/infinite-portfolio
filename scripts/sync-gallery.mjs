@@ -52,6 +52,32 @@ function readMetaFile(dir, name) {
   return readFileSync(path, 'utf8').trim()
 }
 
+/** Read info.json beside images (folder) or as {slug}.info.json (loose file). */
+function readInfoJson(dir, slug) {
+  const candidates = [
+    join(dir, 'info.json'),
+    join(DROP_DIR, `${slug}.info.json`),
+  ]
+  for (const path of candidates) {
+    if (!existsSync(path)) continue
+    try {
+      return JSON.parse(readFileSync(path, 'utf8'))
+    } catch {
+      console.warn(`Invalid JSON in ${path}`)
+    }
+  }
+  return null
+}
+
+function captionForFile(info, filename, title, fallbackLabel) {
+  const key = basename(filename)
+  const fromInfo = info?.captions?.[key] ?? info?.captions?.[filename]
+  if (fromInfo) return fromInfo
+  if (info?.caption && !info.captions) return info.caption
+  const label = fallbackLabel.replace(/\b\w/g, (c) => c.toUpperCase())
+  return label ? `${title}. ${label}.` : `${title}.`
+}
+
 function isImageFile(name) {
   return IMAGE_EXT.has(extname(name).toLowerCase())
 }
@@ -112,7 +138,7 @@ function clearDestDir(destDir) {
   }
 }
 
-function buildImages(slug, title, srcDir, files) {
+function buildImages(slug, title, srcDir, files, info) {
   const destDir = join(OUT_IMG_DIR, slug)
   clearDestDir(destDir)
 
@@ -121,10 +147,11 @@ function buildImages(slug, title, srcDir, files) {
     const label = basename(file, extname(file))
       .replace(/[-_]/g, ' ')
       .trim()
+    const cap = captionForFile(info, file, title, label || `image ${i + 1}`)
     return {
       file: `/images/projects/${slug}/${file}`,
-      alt: `${title} — ${label || `image ${i + 1}`}`,
-      caption: `${title}. ${label ? label.replace(/\b\w/g, (c) => c.toUpperCase()) : `Image ${i + 1}`}.`,
+      alt: info?.alts?.[file] ?? `${title} — ${label || `image ${i + 1}`}`,
+      caption: cap,
     }
   })
 }
@@ -148,10 +175,12 @@ function syncCollectionFolder(slug, sortIndex) {
   }
 
   const used = files.slice(0, MAX_CAROUSEL)
-  const title = readMetaFile(srcDir, META_TITLE) || humanize(slug)
-  const yearRaw = readMetaFile(srcDir, META_YEAR)
+  const info = readInfoJson(srcDir, slug)
+  const title =
+    info?.title ?? readMetaFile(srcDir, META_TITLE) ?? humanize(slug)
+  const yearRaw = info?.year ?? readMetaFile(srcDir, META_YEAR)
   const year = yearRaw ? Number(yearRaw) : new Date().getFullYear()
-  const sortRaw = readMetaFile(srcDir, META_SORT)
+  const sortRaw = info?.sort ?? readMetaFile(srcDir, META_SORT)
   const sort = sortRaw ? Number(sortRaw) : sortIndex * 10
 
   const project = {
@@ -160,7 +189,7 @@ function syncCollectionFolder(slug, sortIndex) {
     year: Number.isFinite(year) ? year : new Date().getFullYear(),
     sort,
     coverIndex: 0,
-    images: buildImages(slug, title, srcDir, used),
+    images: buildImages(slug, title, srcDir, used, info),
   }
 
   writeProject(project)
@@ -188,22 +217,24 @@ function syncLooseImage(filename, sortIndex) {
   clearDestDir(destDir)
   copyFileSync(join(srcDir, filename), join(destDir, filename))
 
-  const title = humanize(slug)
+  const info = readInfoJson(DROP_DIR, slug)
+  const title = info?.title ?? humanize(slug)
   const label = basename(filename, extname(filename))
     .replace(/[-_]/g, ' ')
     .trim()
+  const year = info?.year ? Number(info.year) : new Date().getFullYear()
 
   const project = {
     slug,
     title,
-    year: new Date().getFullYear(),
-    sort: sortIndex * 10,
+    year: Number.isFinite(year) ? year : new Date().getFullYear(),
+    sort: info?.sort ?? sortIndex * 10,
     coverIndex: 0,
     images: [
       {
         file: `/images/projects/${slug}/${filename}`,
-        alt: `${title} — ${label || 'image'}`,
-        caption: `${title}.`,
+        alt: info?.alt ?? `${title}`,
+        caption: captionForFile(info, filename, title, label),
       },
     ],
   }
