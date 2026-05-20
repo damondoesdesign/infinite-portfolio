@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Content Admin</title>
+    <script src="https://unpkg.com/@sveltia/cms@0.110.0/dist/sveltia-cms.js"></script>
+  </head>
+  <body>
+    <script>
+      // GitHub repo: damondoesdesign/infinite-portfolio
+      CMS.init({
+        config: {
+          backend: {
+            name: 'github',
+            repo: 'damondoesdesign/infinite-portfolio',
+            branch: 'main',
+          },
+          local_backend: true,
+          media_folder: 'public/images/projects',
+          public_path: '/images/projects',
+          collections: [
+            {
+              name: 'projects',
+              label: 'Projects',
+              label_singular: 'Project',
+              folder: 'content/projects',
+              create: true,
+              slug: '{{slug}}',
+              extension: 'json',
+              format: 'json',
+              identifier_field: 'slug',
+              summary: '{{title}} ({{year}})',
+              fields: [
+                { label: 'Slug', name: 'slug', widget: 'string' },
+                { label: 'Title', name: 'title', widget: 'string' },
+                { label: 'Year', name: 'year', widget: 'number', default: 2026 },
+                { label: 'Sort order', name: 'sort', widget: 'number', default: 0 },
+                {
+                  label: 'Cover image index',
+                  name: 'coverIndex',
+                  widget: 'number',
+                  default: 0,
+                  hint: '0 = first image in gallery',
+                },
+                {
+                  label: 'Images',
+                  name: 'images',
+                  widget: 'list',
+                  max: 5,
+                  min: 1,
+                  fields: [
+                    { label: 'Image', name: 'file', widget: 'image' },
+                    { label: 'Alt text', name: 'alt', widget: 'string' },
+                    { label: 'Caption', name: 'caption', widget: 'text' },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      })
+    </script>
+  </body>
+</html>
