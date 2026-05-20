@@ -8,9 +8,6 @@
   --detail-backdrop-opacity: 0.25;
   --detail-backdrop-blur: 6px;
 
-  --shadow-size: 5px;
-  --shadow-opacity: 0.15;
-
   font-family:
     'Chicago',
     'Geneva',
@@ -133,15 +130,12 @@ body {
   display: grid;
   place-items: center;
   background: transparent;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: zoom-out;
 }
 
 .detail-overlay[hidden] {
   display: none !important;
-}
-
-.detail-overlay > * {
-  pointer-events: auto;
 }
 
 .detail-frame {
@@ -152,6 +146,7 @@ body {
   grid-template-rows: 1fr auto;
   gap: 14px;
   z-index: 1;
+  pointer-events: none;
 }
 
 .detail-image {
@@ -187,6 +182,7 @@ body {
   display: grid;
   place-items: center;
   padding: 0;
+  pointer-events: auto;
 }
 
 .detail-nav[hidden] {
@@ -218,6 +214,7 @@ body {
   line-height: 1;
   cursor: pointer;
   z-index: 22;
+  pointer-events: auto;
 }
 
 .detail-close:hover {

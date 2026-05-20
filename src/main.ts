@@ -13,6 +13,7 @@ let canvas: InfiniteCanvas
 
 const detail = new DetailView(app, {
   onClose: () => canvas.setEnabled(true),
+  getThumbBySlug: (slug) => canvas.getThumbBySlug(slug),
 })
 
 canvas = new InfiniteCanvas(stage, {

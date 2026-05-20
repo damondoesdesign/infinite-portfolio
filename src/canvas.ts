@@ -1,4 +1,3 @@
-import { assetUrl } from './assetUrl'
 import {
   getCoverImage,
   getProjects,
@@ -7,7 +6,8 @@ import {
   TILE_PITCH,
   TILE_SIZE,
 } from './content'
-import { clamp, lerp, prefersReducedMotion } from './motion'
+import { lerp, prefersReducedMotion } from './motion'
+import { setImageSrc } from './setImageSrc'
 import type { Project } from './types'
 
 const DRAG_THRESHOLD = 8
@@ -15,8 +15,7 @@ const PAN_LERP = 0.14
 const DRIFT_STRENGTH = 0.045
 const INERTIA_DECAY = 0.9
 const TAP_MAX_MS = 320
-const SHADOW_PX = 5
-const SHADOW_OPACITY = 0.15
+const VIEW_BUFFER = 2
 
 interface CanvasOptions {
   onOpenProject: (project: Project, thumbEl: HTMLElement, imageIndex: number) => void
@@ -79,7 +78,7 @@ export class InfiniteCanvas {
     this.viewport.appendChild(this.world)
 
     this.root.appendChild(this.viewport)
-    this.centerCamera()
+    this.resetCamera()
     this.bindEvents()
     this.loop()
   }
@@ -92,6 +91,15 @@ export class InfiniteCanvas {
       this.velY = 0
       this.dragging = false
     }
+  }
+
+  getThumbBySlug(slug: string): HTMLElement | null {
+    for (const pooled of this.active.values()) {
+      if (pooled.el.dataset.slug === slug && pooled.el.style.visibility !== 'hidden') {
+        return pooled.el
+      }
+    }
+    return null
   }
 
   getCamera() {
@@ -108,17 +116,11 @@ export class InfiniteCanvas {
     this.syncTiles()
   }
 
-  getTileElement(_index: number) {
-    return null
-  }
-
-  private centerCamera() {
-    const cx = (window.innerWidth - this.worldSize.width) / 2
-    const cy = (window.innerHeight - this.worldSize.height) / 2
-    this.camX = cx
-    this.camY = cy
-    this.targetX = cx
-    this.targetY = cy
+  private resetCamera() {
+    this.camX = 0
+    this.camY = 0
+    this.targetX = 0
+    this.targetY = 0
     this.syncTiles()
   }
 
@@ -160,7 +162,6 @@ export class InfiniteCanvas {
       el.className = 'canvas-tile'
       const img = document.createElement('img')
       img.draggable = false
-      img.loading = 'lazy'
       el.appendChild(img)
       this.world.appendChild(el)
     }
@@ -191,9 +192,7 @@ export class InfiniteCanvas {
     pooled.el.dataset.slug = project.slug
     pooled.el.setAttribute('aria-label', `Open ${project.title}`)
 
-    if (pooled.img.src !== assetUrl(cover.file)) {
-      pooled.img.src = assetUrl(cover.file)
-    }
+    setImageSrc(pooled.img, cover.file)
     pooled.img.alt = cover.alt
 
     let badge = pooled.el.querySelector<HTMLElement>('.canvas-tile-badge')
@@ -209,16 +208,9 @@ export class InfiniteCanvas {
       badge.hidden = true
     }
 
-    const half = TILE_SIZE / 2
-    const lightDx = clamp((this.pointerX - (x + half)) / window.innerWidth, -1, 1)
-    const lightDy = clamp((this.pointerY - (y + half)) / window.innerHeight, -1, 1)
-    const sx = -lightDx * SHADOW_PX
-    const sy = -lightDy * SHADOW_PX
-
     pooled.el.style.visibility = 'visible'
     pooled.el.style.pointerEvents = 'auto'
     pooled.el.style.transform = `translate3d(${x}px, ${y}px, 0)`
-    pooled.el.style.boxShadow = `${sx}px ${sy}px ${SHADOW_PX}px rgba(0, 0, 0, ${SHADOW_OPACITY})`
   }
 
   private syncTiles = () => {
@@ -227,12 +219,15 @@ export class InfiniteCanvas {
     const { width, height } = this.worldSize
     const viewW = window.innerWidth
     const viewH = window.innerHeight
-    const margin = TILE_PITCH
 
-    const startCol = Math.floor((-this.camX - margin) / TILE_PITCH)
-    const endCol = Math.ceil((viewW - this.camX + margin) / TILE_PITCH)
-    const startRow = Math.floor((-this.camY - margin) / TILE_PITCH)
-    const endRow = Math.ceil((viewH - this.camY + margin) / TILE_PITCH)
+    const startCol =
+      Math.floor(-this.camX / TILE_PITCH) - VIEW_BUFFER
+    const endCol =
+      Math.ceil((viewW - this.camX) / TILE_PITCH) + VIEW_BUFFER
+    const startRow =
+      Math.floor(-this.camY / TILE_PITCH) - VIEW_BUFFER
+    const endRow =
+      Math.ceil((viewH - this.camY) / TILE_PITCH) + VIEW_BUFFER
 
     const needed = new Set<string>()
 
@@ -264,10 +259,10 @@ export class InfiniteCanvas {
         }
 
         if (
-          bestX < -margin ||
-          bestX > viewW + margin ||
-          bestY < -margin ||
-          bestY > viewH + margin
+          bestX > viewW + TILE_SIZE ||
+          bestX < -TILE_SIZE ||
+          bestY > viewH + TILE_SIZE ||
+          bestY < -TILE_SIZE
         ) {
           continue
         }
@@ -294,7 +289,7 @@ export class InfiniteCanvas {
     window.addEventListener('pointermove', this.onPointerMove)
     window.addEventListener('pointerup', this.onPointerUp)
     window.addEventListener('pointercancel', this.onPointerUp)
-    window.addEventListener('resize', () => this.centerCamera())
+    window.addEventListener('resize', this.syncTiles)
   }
 
   private onPointerDown = (e: PointerEvent) => {
@@ -418,8 +413,8 @@ export class InfiniteCanvas {
     if (coarse || !this.hasPointer) return
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 2
-    const nx = clamp((this.pointerX - cx) / cx, -1, 1)
-    const ny = clamp((this.pointerY - cy) / cy, -1, 1)
+    const nx = (this.pointerX - cx) / cx
+    const ny = (this.pointerY - cy) / cy
     this.targetX += nx * DRIFT_STRENGTH * 16
     this.targetY += ny * DRIFT_STRENGTH * 16
   }
@@ -430,5 +425,6 @@ export class InfiniteCanvas {
     window.removeEventListener('pointermove', this.onPointerMove)
     window.removeEventListener('pointerup', this.onPointerUp)
     window.removeEventListener('pointercancel', this.onPointerUp)
+    window.removeEventListener('resize', this.syncTiles)
   }
 }
