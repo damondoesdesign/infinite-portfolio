@@ -1,0 +1,471 @@
+{
+  "projects": [
+    {
+      "slug": "pixel-garden",
+      "title": "Pixel Garden",
+      "year": 2024,
+      "sort": 0,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/pixel-garden-01.svg",
+          "alt": "Pixel Garden — frame 1",
+          "caption": "Placeholder for “Pixel Garden”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "icon-study",
+      "title": "Icon Study",
+      "year": 2025,
+      "sort": 1,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/icon-study-01.svg",
+          "alt": "Icon Study — frame 1",
+          "caption": "Placeholder for “Icon Study”. Frame 1 of 3."
+        },
+        {
+          "file": "/images/placeholders/icon-study-02.svg",
+          "alt": "Icon Study — frame 2",
+          "caption": "Placeholder for “Icon Study”. Frame 2 of 3."
+        },
+        {
+          "file": "/images/placeholders/icon-study-03.svg",
+          "alt": "Icon Study — frame 3",
+          "caption": "Placeholder for “Icon Study”. Frame 3 of 3."
+        }
+      ]
+    },
+    {
+      "slug": "grid-walk",
+      "title": "Grid Walk",
+      "year": 2026,
+      "sort": 2,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/grid-walk-01.svg",
+          "alt": "Grid Walk — frame 1",
+          "caption": "Placeholder for “Grid Walk”. Frame 1 of 4."
+        },
+        {
+          "file": "/images/placeholders/grid-walk-02.svg",
+          "alt": "Grid Walk — frame 2",
+          "caption": "Placeholder for “Grid Walk”. Frame 2 of 4."
+        },
+        {
+          "file": "/images/placeholders/grid-walk-03.svg",
+          "alt": "Grid Walk — frame 3",
+          "caption": "Placeholder for “Grid Walk”. Frame 3 of 4."
+        },
+        {
+          "file": "/images/placeholders/grid-walk-04.svg",
+          "alt": "Grid Walk — frame 4",
+          "caption": "Placeholder for “Grid Walk”. Frame 4 of 4."
+        }
+      ]
+    },
+    {
+      "slug": "mono-lake",
+      "title": "Mono Lake",
+      "year": 2024,
+      "sort": 3,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/mono-lake-01.svg",
+          "alt": "Mono Lake — frame 1",
+          "caption": "Placeholder for “Mono Lake”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "tape-label",
+      "title": "Tape Label",
+      "year": 2025,
+      "sort": 4,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/tape-label-01.svg",
+          "alt": "Tape Label — frame 1",
+          "caption": "Placeholder for “Tape Label”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "boot-screen",
+      "title": "Boot Screen",
+      "year": 2026,
+      "sort": 5,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/boot-screen-01.svg",
+          "alt": "Boot Screen — frame 1",
+          "caption": "Placeholder for “Boot Screen”. Frame 1 of 5."
+        },
+        {
+          "file": "/images/placeholders/boot-screen-02.svg",
+          "alt": "Boot Screen — frame 2",
+          "caption": "Placeholder for “Boot Screen”. Frame 2 of 5."
+        },
+        {
+          "file": "/images/placeholders/boot-screen-03.svg",
+          "alt": "Boot Screen — frame 3",
+          "caption": "Placeholder for “Boot Screen”. Frame 3 of 5."
+        },
+        {
+          "file": "/images/placeholders/boot-screen-04.svg",
+          "alt": "Boot Screen — frame 4",
+          "caption": "Placeholder for “Boot Screen”. Frame 4 of 5."
+        },
+        {
+          "file": "/images/placeholders/boot-screen-05.svg",
+          "alt": "Boot Screen — frame 5",
+          "caption": "Placeholder for “Boot Screen”. Frame 5 of 5."
+        }
+      ]
+    },
+    {
+      "slug": "finder-tile",
+      "title": "Finder Tile",
+      "year": 2024,
+      "sort": 6,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/finder-tile-01.svg",
+          "alt": "Finder Tile — frame 1",
+          "caption": "Placeholder for “Finder Tile”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "trash-can",
+      "title": "Trash Can",
+      "year": 2025,
+      "sort": 7,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/trash-can-01.svg",
+          "alt": "Trash Can — frame 1",
+          "caption": "Placeholder for “Trash Can”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "happy-mac",
+      "title": "Happy Mac",
+      "year": 2026,
+      "sort": 8,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/happy-mac-01.svg",
+          "alt": "Happy Mac — frame 1",
+          "caption": "Placeholder for “Happy Mac”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "menu-bar",
+      "title": "Menu Bar",
+      "year": 2024,
+      "sort": 9,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/menu-bar-01.svg",
+          "alt": "Menu Bar — frame 1",
+          "caption": "Placeholder for “Menu Bar”. Frame 1 of 2."
+        },
+        {
+          "file": "/images/placeholders/menu-bar-02.svg",
+          "alt": "Menu Bar — frame 2",
+          "caption": "Placeholder for “Menu Bar”. Frame 2 of 2."
+        }
+      ]
+    },
+    {
+      "slug": "control-panel",
+      "title": "Control Panel",
+      "year": 2025,
+      "sort": 10,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/control-panel-01.svg",
+          "alt": "Control Panel — frame 1",
+          "caption": "Placeholder for “Control Panel”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "font-sample",
+      "title": "Font Sample",
+      "year": 2026,
+      "sort": 11,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/font-sample-01.svg",
+          "alt": "Font Sample — frame 1",
+          "caption": "Placeholder for “Font Sample”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "bitmap-edit",
+      "title": "Bitmap Edit",
+      "year": 2024,
+      "sort": 12,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/bitmap-edit-01.svg",
+          "alt": "Bitmap Edit — frame 1",
+          "caption": "Placeholder for “Bitmap Edit”. Frame 1 of 3."
+        },
+        {
+          "file": "/images/placeholders/bitmap-edit-02.svg",
+          "alt": "Bitmap Edit — frame 2",
+          "caption": "Placeholder for “Bitmap Edit”. Frame 2 of 3."
+        },
+        {
+          "file": "/images/placeholders/bitmap-edit-03.svg",
+          "alt": "Bitmap Edit — frame 3",
+          "caption": "Placeholder for “Bitmap Edit”. Frame 3 of 3."
+        }
+      ]
+    },
+    {
+      "slug": "spray-can",
+      "title": "Spray Can",
+      "year": 2025,
+      "sort": 13,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/spray-can-01.svg",
+          "alt": "Spray Can — frame 1",
+          "caption": "Placeholder for “Spray Can”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "pencil-tool",
+      "title": "Pencil Tool",
+      "year": 2026,
+      "sort": 14,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/pencil-tool-01.svg",
+          "alt": "Pencil Tool — frame 1",
+          "caption": "Placeholder for “Pencil Tool”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "eraser-test",
+      "title": "Eraser Test",
+      "year": 2024,
+      "sort": 15,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/eraser-test-01.svg",
+          "alt": "Eraser Test — frame 1",
+          "caption": "Placeholder for “Eraser Test”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "marquee-box",
+      "title": "Marquee Box",
+      "year": 2025,
+      "sort": 16,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/marquee-box-01.svg",
+          "alt": "Marquee Box — frame 1",
+          "caption": "Placeholder for “Marquee Box”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "lasso-loop",
+      "title": "Lasso Loop",
+      "year": 2026,
+      "sort": 17,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/lasso-loop-01.svg",
+          "alt": "Lasso Loop — frame 1",
+          "caption": "Placeholder for “Lasso Loop”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "hand-tool",
+      "title": "Hand Tool",
+      "year": 2024,
+      "sort": 18,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/hand-tool-01.svg",
+          "alt": "Hand Tool — frame 1",
+          "caption": "Placeholder for “Hand Tool”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "zoom-lens",
+      "title": "Zoom Lens",
+      "year": 2025,
+      "sort": 19,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/zoom-lens-01.svg",
+          "alt": "Zoom Lens — frame 1",
+          "caption": "Placeholder for “Zoom Lens”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "ruler-line",
+      "title": "Ruler Line",
+      "year": 2026,
+      "sort": 20,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/ruler-line-01.svg",
+          "alt": "Ruler Line — frame 1",
+          "caption": "Placeholder for “Ruler Line”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "crop-marks",
+      "title": "Crop Marks",
+      "year": 2024,
+      "sort": 21,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/crop-marks-01.svg",
+          "alt": "Crop Marks — frame 1",
+          "caption": "Placeholder for “Crop Marks”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "halftone",
+      "title": "Halftone",
+      "year": 2025,
+      "sort": 22,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/halftone-01.svg",
+          "alt": "Halftone — frame 1",
+          "caption": "Placeholder for “Halftone”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "dither-field",
+      "title": "Dither Field",
+      "year": 2026,
+      "sort": 23,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/dither-field-01.svg",
+          "alt": "Dither Field — frame 1",
+          "caption": "Placeholder for “Dither Field”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "scan-line",
+      "title": "Scan Line",
+      "year": 2024,
+      "sort": 24,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/scan-line-01.svg",
+          "alt": "Scan Line — frame 1",
+          "caption": "Placeholder for “Scan Line”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "wire-frame",
+      "title": "Wire Frame",
+      "year": 2025,
+      "sort": 25,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/wire-frame-01.svg",
+          "alt": "Wire Frame — frame 1",
+          "caption": "Placeholder for “Wire Frame”. Frame 1 of 4."
+        },
+        {
+          "file": "/images/placeholders/wire-frame-02.svg",
+          "alt": "Wire Frame — frame 2",
+          "caption": "Placeholder for “Wire Frame”. Frame 2 of 4."
+        },
+        {
+          "file": "/images/placeholders/wire-frame-03.svg",
+          "alt": "Wire Frame — frame 3",
+          "caption": "Placeholder for “Wire Frame”. Frame 3 of 4."
+        },
+        {
+          "file": "/images/placeholders/wire-frame-04.svg",
+          "alt": "Wire Frame — frame 4",
+          "caption": "Placeholder for “Wire Frame”. Frame 4 of 4."
+        }
+      ]
+    },
+    {
+      "slug": "dot-matrix",
+      "title": "Dot Matrix",
+      "year": 2026,
+      "sort": 26,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/dot-matrix-01.svg",
+          "alt": "Dot Matrix — frame 1",
+          "caption": "Placeholder for “Dot Matrix”. Frame 1 of 1."
+        }
+      ]
+    },
+    {
+      "slug": "stamp-set",
+      "title": "Stamp Set",
+      "year": 2024,
+      "sort": 27,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/placeholders/stamp-set-01.svg",
+          "alt": "Stamp Set — frame 1",
+          "caption": "Placeholder for “Stamp Set”. Frame 1 of 1."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "name": "infinite-portfolio",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "generate": "node scripts/generate-placeholders.mjs",
+    "dev": "npm run merge && vite",
+    "merge": "node scripts/merge-projects.mjs",
+    "prebuild": "npm run generate && npm run merge",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12"
+  }
+}
