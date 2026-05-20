@@ -1,0 +1,14 @@
+{
+  "slug": "faveicon",
+  "title": "Faveicon",
+  "year": 2026,
+  "sort": 40,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/faveicon/faveicon.png",
+      "alt": "Faveicon — faveicon",
+      "caption": "Faveicon."
+    }
+  ]
+}

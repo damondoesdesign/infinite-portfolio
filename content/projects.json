@@ -13,6 +13,300 @@
           "caption": "1."
         }
       ]
+    },
+    {
+      "slug": "40party",
+      "title": "40party",
+      "year": 2026,
+      "sort": 10,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/40party/40PARTY.jpg",
+          "alt": "40party — 40PARTY",
+          "caption": "40party."
+        }
+      ]
+    },
+    {
+      "slug": "bcc-medium-test",
+      "title": "Bcc Medium Test",
+      "year": 2026,
+      "sort": 20,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/bcc-medium-test/bcc-medium-test.gif",
+          "alt": "Bcc Medium Test — bcc medium test",
+          "caption": "Bcc Medium Test."
+        }
+      ]
+    },
+    {
+      "slug": "chillbev-copy",
+      "title": "Chillbev Copy",
+      "year": 2026,
+      "sort": 30,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/chillbev-copy/chillbev copy.jpg",
+          "alt": "Chillbev Copy — chillbev copy",
+          "caption": "Chillbev Copy."
+        }
+      ]
+    },
+    {
+      "slug": "faveicon",
+      "title": "Faveicon",
+      "year": 2026,
+      "sort": 40,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/faveicon/faveicon.png",
+          "alt": "Faveicon — faveicon",
+          "caption": "Faveicon."
+        }
+      ]
+    },
+    {
+      "slug": "henrys-1-2",
+      "title": "Henrys 1 2",
+      "year": 2026,
+      "sort": 50,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/henrys-1-2/henrys-1-2.jpg",
+          "alt": "Henrys 1 2 — henrys 1 2",
+          "caption": "Henrys 1 2."
+        }
+      ]
+    },
+    {
+      "slug": "henryswinespirit",
+      "title": "Henryswinespirit",
+      "year": 2026,
+      "sort": 60,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/henryswinespirit/henryswinespirit.jpg",
+          "alt": "Henryswinespirit — henryswinespirit",
+          "caption": "Henryswinespirit."
+        }
+      ]
+    },
+    {
+      "slug": "img-3203",
+      "title": "Img 3203",
+      "year": 2026,
+      "sort": 70,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/img-3203/IMG_3203.JPG",
+          "alt": "Img 3203 — IMG 3203",
+          "caption": "Img 3203."
+        }
+      ]
+    },
+    {
+      "slug": "img-3271-2x",
+      "title": "Img 3271 2x",
+      "year": 2026,
+      "sort": 80,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/img-3271-2x/IMG_3271@2x.png",
+          "alt": "Img 3271 2x — IMG 3271@2x",
+          "caption": "Img 3271 2x."
+        }
+      ]
+    },
+    {
+      "slug": "menudetail-copy",
+      "title": "Menudetail Copy",
+      "year": 2026,
+      "sort": 90,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/menudetail-copy/menudetail copy.jpg",
+          "alt": "Menudetail Copy — menudetail copy",
+          "caption": "Menudetail Copy."
+        }
+      ]
+    },
+    {
+      "slug": "mission-workshop-nyc-1-2x",
+      "title": "Mission Workshop Nyc 1 2x",
+      "year": 2026,
+      "sort": 100,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/mission-workshop-nyc-1-2x/Mission-Workshop-NYC-1@2x.png",
+          "alt": "Mission Workshop Nyc 1 2x — Mission Workshop NYC 1@2x",
+          "caption": "Mission Workshop Nyc 1 2x."
+        }
+      ]
+    },
+    {
+      "slug": "okonomi",
+      "title": "Okonomi",
+      "year": 2026,
+      "sort": 110,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/okonomi/okonomi.jpg",
+          "alt": "Okonomi — okonomi",
+          "caption": "Okonomi."
+        }
+      ]
+    },
+    {
+      "slug": "process03",
+      "title": "Process03",
+      "year": 2026,
+      "sort": 120,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/process03/process03.jpg",
+          "alt": "Process03 — process03",
+          "caption": "Process03."
+        }
+      ]
+    },
+    {
+      "slug": "shstextile-3",
+      "title": "Shstextile 3",
+      "year": 2026,
+      "sort": 130,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/shstextile-3/shstextile-3.jpg",
+          "alt": "Shstextile 3 — shstextile 3",
+          "caption": "Shstextile 3."
+        }
+      ]
+    },
+    {
+      "slug": "shstextile-6",
+      "title": "Shstextile 6",
+      "year": 2026,
+      "sort": 140,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/shstextile-6/shstextile-6.jpg",
+          "alt": "Shstextile 6 — shstextile 6",
+          "caption": "Shstextile 6."
+        }
+      ]
+    },
+    {
+      "slug": "thing-17-2x",
+      "title": "Thing 17 2x",
+      "year": 2026,
+      "sort": 150,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/thing-17-2x/thing-17@2x.png",
+          "alt": "Thing 17 2x — thing 17@2x",
+          "caption": "Thing 17 2x."
+        }
+      ]
+    },
+    {
+      "slug": "thing-19",
+      "title": "Thing 19",
+      "year": 2026,
+      "sort": 160,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/thing-19/thing-19.jpg",
+          "alt": "Thing 19 — thing 19",
+          "caption": "Thing 19."
+        }
+      ]
+    },
+    {
+      "slug": "thing-32",
+      "title": "Thing 32",
+      "year": 2026,
+      "sort": 170,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/thing-32/thing-32.jpg",
+          "alt": "Thing 32 — thing 32",
+          "caption": "Thing 32."
+        }
+      ]
+    },
+    {
+      "slug": "things-5",
+      "title": "Things 5",
+      "year": 2026,
+      "sort": 180,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/things-5/things-5.jpg",
+          "alt": "Things 5 — things 5",
+          "caption": "Things 5."
+        }
+      ]
+    },
+    {
+      "slug": "things-9-2x",
+      "title": "Things 9 2x",
+      "year": 2026,
+      "sort": 190,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/things-9-2x/things-9@2x.png",
+          "alt": "Things 9 2x — things 9@2x",
+          "caption": "Things 9 2x."
+        }
+      ]
+    },
+    {
+      "slug": "vampire",
+      "title": "Vampire",
+      "year": 2026,
+      "sort": 200,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/vampire/vampire-1.jpg",
+          "alt": "Vampire — vampire 1",
+          "caption": "Vampire. Vampire 1."
+        }
+      ]
+    },
+    {
+      "slug": "workfile001-1-plotted-1",
+      "title": "Workfile001 1 Plotted 1",
+      "year": 2026,
+      "sort": 210,
+      "coverIndex": 0,
+      "images": [
+        {
+          "file": "/images/projects/workfile001-1-plotted-1/workfile001-1_plotted_1.png",
+          "alt": "Workfile001 1 Plotted 1 — workfile001 1 plotted 1",
+          "caption": "Workfile001 1 Plotted 1."
+        }
+      ]
     }
   ]
 }

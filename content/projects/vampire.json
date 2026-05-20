@@ -1,0 +1,14 @@
+{
+  "slug": "vampire",
+  "title": "Vampire",
+  "year": 2026,
+  "sort": 200,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/vampire/vampire-1.jpg",
+      "alt": "Vampire — vampire 1",
+      "caption": "Vampire. Vampire 1."
+    }
+  ]
+}

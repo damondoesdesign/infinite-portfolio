@@ -1,0 +1,14 @@
+{
+  "slug": "thing-32",
+  "title": "Thing 32",
+  "year": 2026,
+  "sort": 170,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/thing-32/thing-32.jpg",
+      "alt": "Thing 32 — thing 32",
+      "caption": "Thing 32."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "slug": "okonomi",
+  "title": "Okonomi",
+  "year": 2026,
+  "sort": 110,
+  "coverIndex": 0,
+  "images": [
+    {
+      "file": "/images/projects/okonomi/okonomi.jpg",
+      "alt": "Okonomi — okonomi",
+      "caption": "Okonomi."
+    }
+  ]
+}
