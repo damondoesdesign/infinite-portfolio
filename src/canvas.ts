@@ -1,3 +1,4 @@
+import { assetUrl } from './assetUrl'
 import {
   buildTileLayouts,
   getCoverImage,
@@ -43,6 +44,8 @@ export class InfiniteCanvas {
   private pressTime = 0
   private pressedTile: HTMLElement | null = null
   private pressedProject: Project | null = null
+  private tilePointerId: number | null = null
+  private onOpenProject: CanvasOptions['onOpenProject']
 
   private pointerX = 0
   private pointerY = 0
@@ -52,6 +55,7 @@ export class InfiniteCanvas {
 
   constructor(root: HTMLElement, options: CanvasOptions) {
     this.root = root
+    this.onOpenProject = options.onOpenProject
     this.tiles = buildTileLayouts(getProjects())
     this.worldSize = getWorldSize(this.tiles.length)
 
@@ -63,7 +67,7 @@ export class InfiniteCanvas {
     this.viewport.appendChild(this.world)
 
     for (const tile of this.tiles) {
-      const el = this.createTile(tile, options.onOpenProject)
+      const el = this.createTile(tile)
       this.tileEls.set(tile.index, el)
       this.world.appendChild(el)
     }
@@ -111,10 +115,7 @@ export class InfiniteCanvas {
     return this.tiles.findIndex((t) => t.project.slug === project.slug)
   }
 
-  private createTile(
-    tile: TileLayout,
-    onOpen: CanvasOptions['onOpenProject']
-  ): HTMLElement {
+  private createTile(tile: TileLayout): HTMLElement {
     const cover = getCoverImage(tile.project)
     const button = document.createElement('button')
     button.type = 'button'
@@ -123,7 +124,7 @@ export class InfiniteCanvas {
     button.setAttribute('aria-label', `Open ${tile.project.title}`)
 
     const img = document.createElement('img')
-    img.src = cover.file
+    img.src = assetUrl(cover.file)
     img.alt = cover.alt
     img.width = TILE_SIZE
     img.height = TILE_SIZE
@@ -137,12 +138,6 @@ export class InfiniteCanvas {
       badge.textContent = String(tile.project.images.length)
       button.appendChild(badge)
     }
-
-    button.addEventListener('click', (e) => {
-      e.preventDefault()
-      if (this.dragMoved) return
-      onOpen(tile.project, button, tile.project.coverIndex ?? 0)
-    })
 
     return button
   }
@@ -160,6 +155,18 @@ export class InfiniteCanvas {
     const target = e.target as HTMLElement
     const tile = target.closest<HTMLElement>('.canvas-tile')
 
+    if (tile) {
+      this.tilePointerId = e.pointerId
+      this.dragStartX = e.clientX
+      this.dragStartY = e.clientY
+      this.dragMoved = false
+      this.pressTime = performance.now()
+      this.pressedTile = tile
+      this.pressedProject =
+        this.tiles[Number(tile.dataset.index)]?.project ?? null
+      return
+    }
+
     this.dragging = true
     this.dragPointerId = e.pointerId
     this.dragStartX = e.clientX
@@ -167,11 +174,8 @@ export class InfiniteCanvas {
     this.dragOriginX = this.targetX
     this.dragOriginY = this.targetY
     this.dragMoved = false
-    this.pressTime = performance.now()
-    this.pressedTile = tile
-    this.pressedProject = tile
-      ? this.tiles[Number(tile.dataset.index)]?.project ?? null
-      : null
+    this.pressedTile = null
+    this.pressedProject = null
 
     this.viewport.setPointerCapture(e.pointerId)
     this.viewport.classList.add('is-grabbing')
@@ -184,6 +188,13 @@ export class InfiniteCanvas {
     this.pointerY = e.clientY
     this.hasPointer = true
 
+    if (e.pointerId === this.tilePointerId) {
+      const dx = e.clientX - this.dragStartX
+      const dy = e.clientY - this.dragStartY
+      if (Math.hypot(dx, dy) > DRAG_THRESHOLD) this.dragMoved = true
+      return
+    }
+
     if (!this.dragging || e.pointerId !== this.dragPointerId) return
 
     const dx = e.clientX - this.dragStartX
@@ -191,8 +202,6 @@ export class InfiniteCanvas {
 
     if (!this.dragMoved && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
       this.dragMoved = true
-      this.pressedTile = null
-      this.pressedProject = null
     }
 
     if (this.dragMoved) {
@@ -204,17 +213,29 @@ export class InfiniteCanvas {
   }
 
   private onPointerUp = (e: PointerEvent) => {
-    if (e.pointerId !== this.dragPointerId) return
+    if (e.pointerId === this.tilePointerId) {
+      const quickTap =
+        !this.dragMoved &&
+        performance.now() - this.pressTime < TAP_MAX_MS &&
+        this.pressedTile &&
+        this.pressedProject
 
-    const quickTap =
-      !this.dragMoved &&
-      performance.now() - this.pressTime < TAP_MAX_MS &&
-      this.pressedTile &&
-      this.pressedProject
+      if (quickTap && this.pressedTile && this.pressedProject) {
+        this.onOpenProject(
+          this.pressedProject,
+          this.pressedTile,
+          this.pressedProject.coverIndex ?? 0
+        )
+      }
 
-    if (quickTap && this.pressedTile && this.pressedProject) {
-      // click handler on button handles open
+      this.tilePointerId = null
+      this.pressedTile = null
+      this.pressedProject = null
+      this.dragMoved = false
+      return
     }
+
+    if (e.pointerId !== this.dragPointerId) return
 
     this.dragging = false
     this.dragPointerId = null

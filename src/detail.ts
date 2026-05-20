@@ -1,3 +1,4 @@
+import { assetUrl } from './assetUrl'
 import type { Project } from './types'
 
 const ZOOM_MS = 520
@@ -203,7 +204,7 @@ export class DetailView {
     if (!item) return
 
     const swap = () => {
-      this.img.src = item.file
+      this.img.src = assetUrl(item.file)
       this.img.alt = item.alt
       this.caption.textContent = item.caption
     }
