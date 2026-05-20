@@ -4,7 +4,7 @@ export function assetUrl(path: string): string {
   const relative = path.startsWith('/') ? path.slice(1) : path
   const encoded = relative
     .split('/')
-    .map((segment) => encodeURIComponent(segment))
+    .map((segment) => encodeURI(segment))
     .join('/')
   return `${base}${encoded}`
 }
