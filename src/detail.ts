@@ -6,6 +6,8 @@ const ZOOM_MS = 560
 interface DetailOptions {
   onClose: () => void
   getThumbBySlug: (slug: string) => HTMLElement | null
+  freezeCanvas: () => void
+  unfreezeCanvas: () => void
 }
 
 export class DetailView {
@@ -22,6 +24,7 @@ export class DetailView {
   private project: Project | null = null
   private imageIndex = 0
   private originSlug = ''
+  private originRect: DOMRect | null = null
   private isOpen = false
   private animating = false
 
@@ -67,8 +70,11 @@ export class DetailView {
     this.overlay.append(this.closeBtn, this.frame)
     this.root.appendChild(this.overlay)
 
-    this.overlay.addEventListener('click', () => {
-      if (!this.animating) this.close()
+    this.overlay.addEventListener('click', (e) => {
+      if (this.animating) return
+      const t = e.target as HTMLElement
+      if (t.closest('.detail-nav') || t.closest('.detail-close')) return
+      this.close()
     })
 
     this.prevBtn.addEventListener('click', (e) => {
@@ -108,6 +114,10 @@ export class DetailView {
 
   open(project: Project, thumbEl: HTMLElement, imageIndex = 0) {
     if (this.animating) return
+
+    this.options.freezeCanvas()
+    this.originRect = thumbEl.getBoundingClientRect()
+
     this.project = project
     this.imageIndex = imageIndex
     this.originSlug = project.slug
@@ -121,7 +131,7 @@ export class DetailView {
   }
 
   private runFlipOpen(thumbEl: HTMLElement) {
-    const thumbRect = thumbEl.getBoundingClientRect()
+    const thumbRect = this.originRect ?? thumbEl.getBoundingClientRect()
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     requestAnimationFrame(() => {
@@ -133,25 +143,13 @@ export class DetailView {
 
       this.animating = true
       const frameRect = this.frame.getBoundingClientRect()
-      const dx =
-        thumbRect.left +
-        thumbRect.width / 2 -
-        (frameRect.left + frameRect.width / 2)
-      const dy =
-        thumbRect.top +
-        thumbRect.height / 2 -
-        (frameRect.top + frameRect.height / 2)
-      const sx = thumbRect.width / frameRect.width
-      const sy = thumbRect.height / frameRect.height
+      const t = this.flipTransform(thumbRect, frameRect)
 
       this.frame
         .animate(
           [
-            {
-              transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
-              opacity: 0.7,
-            },
-            { transform: 'translate(0, 0) scale(1, 1)', opacity: 1 },
+            { transform: t.from, opacity: 0.7 },
+            { transform: 'translate(0px, 0px) scale(1, 1)', opacity: 1 },
           ],
           {
             duration: ZOOM_MS,
@@ -167,46 +165,33 @@ export class DetailView {
   }
 
   private runFlipClose(onDone: () => void) {
-    const thumb =
-      this.options.getThumbBySlug(this.originSlug) ??
-      document.querySelector<HTMLElement>(
-        `.canvas-tile[data-slug="${this.originSlug}"]`
-      )
-
+    const thumb = this.options.getThumbBySlug(this.originSlug)
+    const thumbRect = thumb?.getBoundingClientRect() ?? this.originRect
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
-    if (!thumb || reduced) {
+    if (!thumbRect || reduced) {
+      this.animating = true
       this.frame
         .animate(
           [{ opacity: 1, transform: 'scale(1)' }, { opacity: 0, transform: 'scale(0.94)' }],
           { duration: 280, easing: 'ease-in', fill: 'forwards' }
         )
-        .onfinish = onDone
+        .onfinish = () => {
+          this.animating = false
+          onDone()
+        }
       return
     }
 
-    const thumbRect = thumb.getBoundingClientRect()
     const frameRect = this.frame.getBoundingClientRect()
-    const dx =
-      thumbRect.left +
-      thumbRect.width / 2 -
-      (frameRect.left + frameRect.width / 2)
-    const dy =
-      thumbRect.top +
-      thumbRect.height / 2 -
-      (frameRect.top + frameRect.height / 2)
-    const sx = thumbRect.width / frameRect.width
-    const sy = thumbRect.height / frameRect.height
+    const t = this.flipTransform(thumbRect, frameRect)
 
     this.animating = true
     this.frame
       .animate(
         [
-          { transform: 'translate(0, 0) scale(1, 1)', opacity: 1 },
-          {
-            transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
-            opacity: 0.75,
-          },
+          { transform: 'translate(0px, 0px) scale(1, 1)', opacity: 1 },
+          { transform: t.from, opacity: 0.75 },
         ],
         {
           duration: ZOOM_MS,
@@ -220,6 +205,20 @@ export class DetailView {
       }
   }
 
+  private flipTransform(thumbRect: DOMRect, frameRect: DOMRect) {
+    const dx =
+      thumbRect.left +
+      thumbRect.width / 2 -
+      (frameRect.left + frameRect.width / 2)
+    const dy =
+      thumbRect.top +
+      thumbRect.height / 2 -
+      (frameRect.top + frameRect.height / 2)
+    const sx = thumbRect.width / Math.max(frameRect.width, 1)
+    const sy = thumbRect.height / Math.max(frameRect.height, 1)
+    return { from: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }
+  }
+
   close() {
     if (!this.isOpen || this.animating) return
 
@@ -227,11 +226,13 @@ export class DetailView {
       this.isOpen = false
       this.project = null
       this.originSlug = ''
+      this.originRect = null
       this.overlay.hidden = true
       this.root.classList.remove('detail-active')
       this.animating = false
       this.frame.style.transform = ''
       this.frame.style.opacity = ''
+      this.options.unfreezeCanvas()
       this.options.onClose()
     }
 
@@ -273,8 +274,8 @@ export class DetailView {
     const multi = (this.project?.images.length ?? 0) > 1
     this.prevBtn.hidden = !multi
     this.nextBtn.hidden = !multi
-    this.prevBtn.style.display = multi ? '' : 'none'
-    this.nextBtn.style.display = multi ? '' : 'none'
+    this.prevBtn.style.display = multi ? 'grid' : 'none'
+    this.nextBtn.style.display = multi ? 'grid' : 'none'
   }
 
   private onKeyDown = (e: KeyboardEvent) => {

@@ -15,7 +15,6 @@ const PAN_LERP = 0.14
 const DRIFT_STRENGTH = 0.045
 const INERTIA_DECAY = 0.9
 const TAP_MAX_MS = 320
-const VIEW_BUFFER = 2
 
 interface CanvasOptions {
   onOpenProject: (project: Project, thumbEl: HTMLElement, imageIndex: number) => void
@@ -24,6 +23,7 @@ interface CanvasOptions {
 interface PooledTile {
   el: HTMLButtonElement
   img: HTMLImageElement
+  fileKey: string
   col: number
   row: number
 }
@@ -44,6 +44,9 @@ export class InfiniteCanvas {
   private targetY = 0
   private velX = 0
   private velY = 0
+  private frozen = false
+  private frozenX = 0
+  private frozenY = 0
 
   private dragging = false
   private dragPointerId: number | null = null
@@ -83,6 +86,19 @@ export class InfiniteCanvas {
     this.loop()
   }
 
+  freeze() {
+    this.frozen = true
+    this.frozenX = this.targetX
+    this.frozenY = this.targetY
+    this.velX = 0
+    this.velY = 0
+    this.dragging = false
+  }
+
+  unfreeze() {
+    this.frozen = false
+  }
+
   setEnabled(value: boolean) {
     this.enabled = value
     this.viewport.classList.toggle('is-paused', !value)
@@ -95,25 +111,23 @@ export class InfiniteCanvas {
 
   getThumbBySlug(slug: string): HTMLElement | null {
     for (const pooled of this.active.values()) {
-      if (pooled.el.dataset.slug === slug && pooled.el.style.visibility !== 'hidden') {
+      if (
+        pooled.el.dataset.slug === slug &&
+        pooled.el.style.visibility !== 'hidden'
+      ) {
         return pooled.el
       }
     }
     return null
   }
 
-  getCamera() {
-    return { x: this.camX, y: this.camY }
-  }
-
-  setCamera(x: number, y: number) {
-    this.camX = x
-    this.camY = y
-    this.targetX = x
-    this.targetY = y
-    this.velX = 0
-    this.velY = 0
-    this.syncTiles()
+  private viewBuffer() {
+    const viewW = window.innerWidth
+    const viewH = window.innerHeight
+    return {
+      col: Math.ceil(viewW / TILE_PITCH) + 4,
+      row: Math.ceil(viewH / TILE_PITCH) + 4,
+    }
   }
 
   private resetCamera() {
@@ -132,11 +146,13 @@ export class InfiniteCanvas {
       const shift = Math.sign(this.targetX) * width * 4
       this.targetX -= shift
       this.camX -= shift
+      if (this.frozen) this.frozenX -= shift
     }
     if (Math.abs(this.targetY) > limitY) {
       const shift = Math.sign(this.targetY) * height * 4
       this.targetY -= shift
       this.camY -= shift
+      if (this.frozen) this.frozenY -= shift
     }
   }
 
@@ -166,7 +182,7 @@ export class InfiniteCanvas {
       this.world.appendChild(el)
     }
     const img = el.querySelector('img')!
-    return { el, img, col: 0, row: 0 }
+    return { el, img, fileKey: '', col: 0, row: 0 }
   }
 
   private releaseTile(key: string) {
@@ -192,7 +208,10 @@ export class InfiniteCanvas {
     pooled.el.dataset.slug = project.slug
     pooled.el.setAttribute('aria-label', `Open ${project.title}`)
 
-    setImageSrc(pooled.img, cover.file)
+    if (pooled.fileKey !== cover.file) {
+      setImageSrc(pooled.img, cover.file)
+      pooled.fileKey = cover.file
+    }
     pooled.img.alt = cover.alt
 
     let badge = pooled.el.querySelector<HTMLElement>('.canvas-tile-badge')
@@ -209,7 +228,7 @@ export class InfiniteCanvas {
     }
 
     pooled.el.style.visibility = 'visible'
-    pooled.el.style.pointerEvents = 'auto'
+    pooled.el.style.pointerEvents = this.enabled ? 'auto' : 'none'
     pooled.el.style.transform = `translate3d(${x}px, ${y}px, 0)`
   }
 
@@ -219,15 +238,15 @@ export class InfiniteCanvas {
     const { width, height } = this.worldSize
     const viewW = window.innerWidth
     const viewH = window.innerHeight
+    const buf = this.viewBuffer()
 
-    const startCol =
-      Math.floor(-this.camX / TILE_PITCH) - VIEW_BUFFER
-    const endCol =
-      Math.ceil((viewW - this.camX) / TILE_PITCH) + VIEW_BUFFER
-    const startRow =
-      Math.floor(-this.camY / TILE_PITCH) - VIEW_BUFFER
-    const endRow =
-      Math.ceil((viewH - this.camY) / TILE_PITCH) + VIEW_BUFFER
+    const camX = this.frozen ? this.frozenX : this.camX
+    const camY = this.frozen ? this.frozenY : this.camY
+
+    const startCol = Math.floor(-camX / TILE_PITCH) - buf.col
+    const endCol = Math.ceil((viewW - camX) / TILE_PITCH) + buf.col
+    const startRow = Math.floor(-camY / TILE_PITCH) - buf.row
+    const endRow = Math.ceil((viewH - camY) / TILE_PITCH) + buf.row
 
     const needed = new Set<string>()
 
@@ -239,14 +258,14 @@ export class InfiniteCanvas {
         const baseX = col * TILE_PITCH
         const baseY = row * TILE_PITCH
 
-        let bestX = baseX + this.camX
-        let bestY = baseY + this.camY
+        let bestX = baseX + camX
+        let bestY = baseY + camY
         let bestDist = Infinity
 
         for (let ox = -1; ox <= 1; ox++) {
           for (let oy = -1; oy <= 1; oy++) {
-            const x = baseX + this.camX + ox * width
-            const y = baseY + this.camY + oy * height
+            const x = baseX + camX + ox * width
+            const y = baseY + camY + oy * height
             const cx = x + TILE_SIZE / 2 - viewW / 2
             const cy = y + TILE_SIZE / 2 - viewH / 2
             const dist = cx * cx + cy * cy
@@ -293,7 +312,7 @@ export class InfiniteCanvas {
   }
 
   private onPointerDown = (e: PointerEvent) => {
-    if (!this.enabled) return
+    if (!this.enabled || this.frozen) return
     const tile = (e.target as HTMLElement).closest<HTMLElement>('.canvas-tile')
 
     if (tile) {
@@ -315,8 +334,6 @@ export class InfiniteCanvas {
     this.dragOriginX = this.targetX
     this.dragOriginY = this.targetY
     this.dragMoved = false
-    this.pressedTile = null
-    this.pressedProject = null
     this.viewport.setPointerCapture(e.pointerId)
     this.viewport.classList.add('is-grabbing')
   }
@@ -325,8 +342,7 @@ export class InfiniteCanvas {
     this.pointerX = e.clientX
     this.pointerY = e.clientY
     this.hasPointer = true
-
-    if (!this.enabled) return
+    if (!this.enabled || this.frozen) return
 
     if (e.pointerId === this.tilePointerId) {
       const dx = e.clientX - this.dragStartX
@@ -336,11 +352,9 @@ export class InfiniteCanvas {
     }
 
     if (!this.dragging || e.pointerId !== this.dragPointerId) return
-
     const dx = e.clientX - this.dragStartX
     const dy = e.clientY - this.dragStartY
     if (!this.dragMoved && Math.hypot(dx, dy) > DRAG_THRESHOLD) this.dragMoved = true
-
     if (this.dragMoved) {
       this.targetX = this.dragOriginX + dx
       this.targetY = this.dragOriginY + dy
@@ -364,7 +378,6 @@ export class InfiniteCanvas {
           this.pressedProject.coverIndex ?? 0
         )
       }
-
       this.tilePointerId = null
       this.pressedTile = null
       this.pressedProject = null
@@ -387,11 +400,8 @@ export class InfiniteCanvas {
     const reduced = prefersReducedMotion()
     const lerpFactor = reduced ? 1 : PAN_LERP
 
-    if (this.enabled && !this.dragging && !reduced) {
+    if (this.enabled && !this.frozen && !this.dragging && !reduced) {
       this.applyDesktopDrift()
-    }
-
-    if (this.enabled && !this.dragging && !reduced) {
       this.targetX += this.velX
       this.targetY += this.velY
       this.velX *= INERTIA_DECAY
@@ -400,11 +410,13 @@ export class InfiniteCanvas {
       if (Math.abs(this.velY) < 0.08) this.velY = 0
     }
 
-    this.normalizeCamera()
-    this.camX = lerp(this.camX, this.targetX, lerpFactor)
-    this.camY = lerp(this.camY, this.targetY, lerpFactor)
-    this.syncTiles()
+    if (!this.frozen) {
+      this.normalizeCamera()
+      this.camX = lerp(this.camX, this.targetX, lerpFactor)
+      this.camY = lerp(this.camY, this.targetY, lerpFactor)
+    }
 
+    this.syncTiles()
     this.rafId = requestAnimationFrame(this.loop)
   }
 
@@ -413,10 +425,8 @@ export class InfiniteCanvas {
     if (coarse || !this.hasPointer) return
     const cx = window.innerWidth / 2
     const cy = window.innerHeight / 2
-    const nx = (this.pointerX - cx) / cx
-    const ny = (this.pointerY - cy) / cy
-    this.targetX += nx * DRIFT_STRENGTH * 16
-    this.targetY += ny * DRIFT_STRENGTH * 16
+    this.targetX += ((this.pointerX - cx) / cx) * DRIFT_STRENGTH * 16
+    this.targetY += ((this.pointerY - cy) / cy) * DRIFT_STRENGTH * 16
   }
 
   destroy() {

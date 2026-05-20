@@ -67,6 +67,7 @@ body {
 .detail-active .canvas-viewport {
   opacity: var(--detail-backdrop-opacity);
   filter: blur(var(--detail-backdrop-blur));
+  pointer-events: none;
 }
 
 .canvas-world {
@@ -156,7 +157,7 @@ body {
   object-fit: contain;
   border: none;
   background: transparent;
-  cursor: zoom-out;
+  pointer-events: none;
 }
 
 .piece-caption {
@@ -167,6 +168,7 @@ body {
   letter-spacing: 0.02em;
   max-width: 70ch;
   font-weight: 400;
+  pointer-events: none;
 }
 
 .detail-nav {

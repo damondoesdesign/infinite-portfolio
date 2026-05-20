@@ -14,11 +14,17 @@ let canvas: InfiniteCanvas
 const detail = new DetailView(app, {
   onClose: () => canvas.setEnabled(true),
   getThumbBySlug: (slug) => canvas.getThumbBySlug(slug),
+  freezeCanvas: () => {
+    canvas.setEnabled(false)
+    canvas.freeze()
+  },
+  unfreezeCanvas: () => {
+    canvas.unfreeze()
+  },
 })
 
 canvas = new InfiniteCanvas(stage, {
   onOpenProject: (project, thumbEl, imageIndex) => {
-    canvas.setEnabled(false)
     detail.open(project, thumbEl, imageIndex)
   },
 })
