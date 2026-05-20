@@ -11,4 +11,6 @@ When the user mentions new images, uploading work, or updating the gallery:
 2. If that fails on git push, report the error and tell them to run `./scripts/first-push.sh` once.
 3. Do not ask them to edit JSON or run git manually.
 
-The drop folder is the only source of truth: `public/images/drop/{project-slug}/`
+Drop folder (source of truth): `public/images/drop/`
+- Loose image file → single gallery piece
+- Subfolder with images → carousel collection (2–5 images)

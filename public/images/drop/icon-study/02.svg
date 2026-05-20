@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 120 120">
-  <rect width="120" height="120" fill="#fff"/>
-  <polygon points="60,20 100,100 20,100" fill="#000"/>
-  <text x="60" y="112" text-anchor="middle" font-family="Chicago, Geneva, monospace" font-size="7" fill="#000">2.2</text>
-</svg>

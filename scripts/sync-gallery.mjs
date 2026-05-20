@@ -20,6 +20,7 @@ const PLACEHOLDER_DIR = join(root, 'public', 'images', 'placeholders')
 const META_TITLE = '_title.txt'
 const META_YEAR = '_year.txt'
 const META_SORT = '_sort.txt'
+const MAX_CAROUSEL = 5
 
 const IMAGE_EXT = new Set([
   '.jpg',
@@ -37,6 +38,14 @@ function humanize(slug) {
     .replace(/\b\w/g, (c) => c.toUpperCase())
 }
 
+function slugFromFilename(filename) {
+  const base = basename(filename, extname(filename))
+  return base
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 function readMetaFile(dir, name) {
   const path = join(dir, name)
   if (!existsSync(path)) return null
@@ -45,6 +54,10 @@ function readMetaFile(dir, name) {
 
 function isImageFile(name) {
   return IMAGE_EXT.has(extname(name).toLowerCase())
+}
+
+function isMetaFile(name) {
+  return name.startsWith('_') && name.endsWith('.txt')
 }
 
 function seedDropFromPlaceholders() {
@@ -58,18 +71,23 @@ function seedDropFromPlaceholders() {
     const [, slug, num, ext] = match
     const destDir = join(DROP_DIR, slug)
     mkdirSync(destDir, { recursive: true })
-    const destName = `${num}.${ext}`
-    copyFileSync(join(PLACEHOLDER_DIR, file), join(destDir, destName))
+    copyFileSync(join(PLACEHOLDER_DIR, file), join(destDir, `${num}.${ext}`))
   }
   console.log('Seeded drop/ from placeholder demos.')
 }
 
+function dropHasContent() {
+  if (!existsSync(DROP_DIR)) return false
+  return readdirSync(DROP_DIR, { withFileTypes: true }).some((entry) => {
+    if (entry.name.startsWith('.')) return false
+    if (entry.isDirectory()) return true
+    return isImageFile(entry.name) && !isMetaFile(entry.name)
+  })
+}
+
 function seedDropIfEmpty() {
   mkdirSync(DROP_DIR, { recursive: true })
-  const existing = readdirSync(DROP_DIR, { withFileTypes: true }).filter(
-    (d) => d.isDirectory() && !d.name.startsWith('.')
-  )
-  if (existing.length > 0) return
+  if (dropHasContent()) return
   seedDropFromPlaceholders()
 }
 
@@ -79,40 +97,26 @@ function listImageFiles(dir) {
     .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
 }
 
-function syncProjectFolder(slug, sortIndex) {
-  const srcDir = join(DROP_DIR, slug)
+function writeProject(project) {
+  mkdirSync(CONTENT_DIR, { recursive: true })
+  writeFileSync(
+    join(CONTENT_DIR, `${project.slug}.json`),
+    JSON.stringify(project, null, 2) + '\n'
+  )
+}
+
+function clearDestDir(destDir) {
+  mkdirSync(destDir, { recursive: true })
+  for (const f of readdirSync(destDir)) {
+    rmSync(join(destDir, f), { force: true })
+  }
+}
+
+function buildImages(slug, title, srcDir, files) {
   const destDir = join(OUT_IMG_DIR, slug)
-  const files = listImageFiles(srcDir)
+  clearDestDir(destDir)
 
-  if (files.length === 0) {
-    console.warn(`Skipping "${slug}" — no images in folder.`)
-    return null
-  }
-
-  if (files.length > 5) {
-    console.warn(
-      ` "${slug}" has ${files.length} images; using first 5 (carousel max).`
-    )
-  }
-
-  const used = files.slice(0, 5)
-  mkdirSync(destDir, { recursive: true })
-
-  // Clear old outputs so renames/removals stay in sync
-  if (existsSync(destDir)) {
-    for (const f of readdirSync(destDir)) {
-      rmSync(join(destDir, f), { force: true })
-    }
-  }
-  mkdirSync(destDir, { recursive: true })
-
-  const title = readMetaFile(srcDir, META_TITLE) || humanize(slug)
-  const yearRaw = readMetaFile(srcDir, META_YEAR)
-  const year = yearRaw ? Number(yearRaw) : new Date().getFullYear()
-  const sortRaw = readMetaFile(srcDir, META_SORT)
-  const sort = sortRaw ? Number(sortRaw) : sortIndex * 10
-
-  const images = used.map((file, i) => {
+  return files.map((file, i) => {
     copyFileSync(join(srcDir, file), join(destDir, file))
     const label = basename(file, extname(file))
       .replace(/[-_]/g, ' ')
@@ -123,6 +127,32 @@ function syncProjectFolder(slug, sortIndex) {
       caption: `${title}. ${label ? label.replace(/\b\w/g, (c) => c.toUpperCase()) : `Image ${i + 1}`}.`,
     }
   })
+}
+
+/** Folder in drop/ → carousel (2–5 images). */
+function syncCollectionFolder(slug, sortIndex) {
+  const srcDir = join(DROP_DIR, slug)
+  const files = listImageFiles(srcDir)
+
+  if (files.length === 0) {
+    console.warn(`Skipping folder "${slug}/" — no images inside.`)
+    return null
+  }
+
+  if (files.length === 1) {
+    console.log(` "${slug}/" has 1 image — single piece (not a carousel).`)
+  } else if (files.length > MAX_CAROUSEL) {
+    console.warn(
+      ` "${slug}/" has ${files.length} images; using first ${MAX_CAROUSEL} for carousel.`
+    )
+  }
+
+  const used = files.slice(0, MAX_CAROUSEL)
+  const title = readMetaFile(srcDir, META_TITLE) || humanize(slug)
+  const yearRaw = readMetaFile(srcDir, META_YEAR)
+  const year = yearRaw ? Number(yearRaw) : new Date().getFullYear()
+  const sortRaw = readMetaFile(srcDir, META_SORT)
+  const sort = sortRaw ? Number(sortRaw) : sortIndex * 10
 
   const project = {
     slug,
@@ -130,16 +160,78 @@ function syncProjectFolder(slug, sortIndex) {
     year: Number.isFinite(year) ? year : new Date().getFullYear(),
     sort,
     coverIndex: 0,
-    images,
+    images: buildImages(slug, title, srcDir, used),
   }
 
-  mkdirSync(CONTENT_DIR, { recursive: true })
-  writeFileSync(
-    join(CONTENT_DIR, `${slug}.json`),
-    JSON.stringify(project, null, 2) + '\n'
+  writeProject(project)
+  return slug
+}
+
+/** Loose image in drop/ → single canvas tile. */
+function syncLooseImage(filename, sortIndex) {
+  const slug = slugFromFilename(filename)
+  if (!slug) {
+    console.warn(`Skipping "${filename}" — could not derive a project name.`)
+    return null
+  }
+
+  const folderPath = join(DROP_DIR, slug)
+  if (existsSync(folderPath) && statSync(folderPath).isDirectory()) {
+    console.warn(
+      `Skipping loose file "${filename}" — folder "${slug}/" already defines this piece.`
+    )
+    return null
+  }
+
+  const srcDir = DROP_DIR
+  const destDir = join(OUT_IMG_DIR, slug)
+  clearDestDir(destDir)
+  copyFileSync(join(srcDir, filename), join(destDir, filename))
+
+  const title = humanize(slug)
+  const label = basename(filename, extname(filename))
+    .replace(/[-_]/g, ' ')
+    .trim()
+
+  const project = {
+    slug,
+    title,
+    year: new Date().getFullYear(),
+    sort: sortIndex * 10,
+    coverIndex: 0,
+    images: [
+      {
+        file: `/images/projects/${slug}/${filename}`,
+        alt: `${title} — ${label || 'image'}`,
+        caption: `${title}.`,
+      },
+    ],
+  }
+
+  writeProject(project)
+  return slug
+}
+
+function scanDropEntries() {
+  const entries = readdirSync(DROP_DIR, { withFileTypes: true }).filter(
+    (e) => !e.name.startsWith('.') && e.name !== 'README.txt'
   )
 
-  return slug
+  const folders = entries
+    .filter((e) => e.isDirectory())
+    .map((e) => ({ type: 'folder', name: e.name }))
+
+  const loose = entries
+    .filter((e) => e.isFile() && isImageFile(e.name) && !isMetaFile(e.name))
+    .map((e) => ({ type: 'file', name: e.name }))
+
+  const combined = [...folders, ...loose].sort((a, b) => {
+    const slugA = a.type === 'folder' ? a.name : slugFromFilename(a.name)
+    const slugB = b.type === 'folder' ? b.name : slugFromFilename(b.name)
+    return slugA.localeCompare(slugB, undefined, { numeric: true })
+  })
+
+  return combined
 }
 
 function removeOrphanContent(validSlugs) {
@@ -150,7 +242,7 @@ function removeOrphanContent(validSlugs) {
     const slug = file.replace(/\.json$/, '')
     if (!valid.has(slug)) {
       rmSync(join(CONTENT_DIR, file))
-      console.log(`Removed content for deleted folder: ${slug}`)
+      console.log(`Removed content for deleted item: ${slug}`)
     }
   }
 }
@@ -162,7 +254,7 @@ function removeOrphanProjectImages(validSlugs) {
     if (!dir.isDirectory()) continue
     if (!valid.has(dir.name)) {
       rmSync(join(OUT_IMG_DIR, dir.name), { recursive: true, force: true })
-      console.log(`Removed images for deleted folder: ${dir.name}`)
+      console.log(`Removed images for deleted item: ${dir.name}`)
     }
   }
 }
@@ -171,21 +263,25 @@ export function syncGallery() {
   seedDropIfEmpty()
   mkdirSync(DROP_DIR, { recursive: true })
 
-  const folders = readdirSync(DROP_DIR, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && !d.name.startsWith('.'))
-    .map((d) => d.name)
-    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }))
-
   const slugs = []
-  folders.forEach((slug, index) => {
-    const result = syncProjectFolder(slug, index)
+  const entries = scanDropEntries()
+
+  entries.forEach((entry, index) => {
+    const result =
+      entry.type === 'folder'
+        ? syncCollectionFolder(entry.name, index)
+        : syncLooseImage(entry.name, index)
     if (result) slugs.push(result)
   })
 
   removeOrphanContent(slugs)
   removeOrphanProjectImages(slugs)
 
-  console.log(`Synced ${slugs.length} project(s) from public/images/drop/`)
+  const folders = entries.filter((e) => e.type === 'folder').length
+  const loose = entries.filter((e) => e.type === 'file').length
+  console.log(
+    `Synced ${slugs.length} piece(s) from drop/ (${loose} single image(s), ${folders} folder collection(s)).`
+  )
   return slugs.length
 }
 

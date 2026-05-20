@@ -78,11 +78,11 @@ Then you can create repos and open PRs from the terminal.
 
 ## Adding work (drop folder — no code)
 
-1. Drop a folder of images into **`public/images/drop/your-project-name/`**
-2. Tell Cursor **“sync the gallery”** or run `npm run publish`
-3. Site updates automatically
+1. **Single image:** drop a file in **`public/images/drop/`** (e.g. `neon-sign.jpg`)
+2. **Carousel / series:** drop a **folder** with 2–5 images (e.g. `drop/neon-series/01.jpg`)
+3. Tell Cursor **“sync the gallery”** or run `npm run publish`
 
-Optional inside each project folder: `_title.txt`, `_year.txt`, `_sort.txt`
+Optional inside a collection folder: `_title.txt`, `_year.txt`, `_sort.txt`
 
 **Auto-publish while you work:** `npm run watch` (watches the drop folder)
 

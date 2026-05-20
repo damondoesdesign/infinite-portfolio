@@ -1,19 +1,11 @@
-DROP YOUR PROJECT FOLDERS HERE
-==============================
+DROP IMAGES HERE
+================
 
-One folder = one gallery piece on the canvas.
+Single piece — put an image file here:
+  drop/my-neon-sign.jpg
 
-Example:
-  drop/my-neon-signs/photo-1.jpg
-  drop/my-neon-signs/photo-2.jpg
+Collection (carousel) — put a folder with 2–5 images:
+  drop/my-series/01.jpg
+  drop/my-series/02.jpg
 
-Optional text files inside a folder:
-  _title.txt   → display title (otherwise uses folder name)
-  _year.txt    → e.g. 2026
-  _sort.txt    → canvas order (lower = earlier)
-
-After adding files, tell Cursor "sync the gallery" or run:
-  npm run publish
-
-Auto-watch mode:
-  npm run watch
+Then tell Cursor "sync the gallery" or run: npm run publish
