@@ -1,23 +1,12 @@
 import { assetUrl } from './assetUrl'
 
-export interface SetImageOptions {
-  /** Detail view and first paint — avoid lazy-load blanks. */
-  eager?: boolean
-}
-
 /**
- * Assign src on a stable <img> node. Never replaces the element (GIFs stay animated).
+ * Set image src on a stable element. Always eager — lazy breaks on transformed canvas tiles.
  */
-export function setImageSrc(
-  img: HTMLImageElement,
-  filePath: string,
-  options: SetImageOptions = {}
-): void {
+export function setImageSrc(img: HTMLImageElement, filePath: string): void {
   if (img.dataset.srcKey === filePath) return
-
   img.dataset.srcKey = filePath
-  const url = assetUrl(filePath)
-  img.loading = options.eager ? 'eager' : 'lazy'
+  img.loading = 'eager'
   img.decoding = 'async'
-  img.src = url
+  img.src = assetUrl(filePath)
 }

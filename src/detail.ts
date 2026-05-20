@@ -163,7 +163,7 @@ export class DetailView {
       })
     }
 
-    setImageSrc(this.img, item.file, { eager: true })
+    setImageSrc(this.img, item.file)
 
     const show = () => {
       if (token !== this.loadToken) return
@@ -178,11 +178,6 @@ export class DetailView {
   private waitForImageLoad(cb: () => void) {
     const run = () => requestAnimationFrame(() => requestAnimationFrame(cb))
 
-    if (this.img.complete && this.img.naturalWidth > 0) {
-      run()
-      return
-    }
-
     const timeout = window.setTimeout(run, LOAD_TIMEOUT_MS)
     const done = () => {
       clearTimeout(timeout)
@@ -190,6 +185,12 @@ export class DetailView {
       this.img.removeEventListener('error', done)
       run()
     }
+
+    if (this.img.complete) {
+      done()
+      return
+    }
+
     this.img.addEventListener('load', done, { once: true })
     this.img.addEventListener('error', done, { once: true })
   }
